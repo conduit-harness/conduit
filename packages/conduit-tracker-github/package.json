@@ -1,0 +1,22 @@
+{
+  "name": "@ausernamedtom/conduit-tracker-github",
+  "version": "0.1.2",
+  "description": "Conduit tracker plugin for GitHub Issues",
+  "type": "module",
+  "exports": {
+    ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "publishConfig": { "access": "public" },
+  "engines": { "node": ">=24.0.0" },
+  "peerDependencies": { "@ausernamedtom/conduit": ">=0.1.0" },
+  "devDependencies": {
+    "@ausernamedtom/conduit": "workspace:*",
+    "@types/node": "latest",
+    "typescript": "latest"
+  }
+}
