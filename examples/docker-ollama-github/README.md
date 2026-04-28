@@ -13,15 +13,24 @@ poll → worktree → LLM → write-back loop without any external dependencies:
 
 ## Run it
 
+This harness runs as a CI job on changes to the relevant paths — see
+`.github/workflows/docker-harness.yml`. It builds the image, runs
+`conduit once` against the mock GitHub server and Ollama, and asserts that
+the expected REST traffic and `agent finished status=succeeded` log line
+both appear.
+
+To run it manually (locally or in a sandbox with Docker available):
+
 ```bash
 cd examples/docker-ollama-github
 cp .env.example .env
 docker compose build
-docker compose up
+docker compose up --abort-on-container-exit --exit-code-from conduit
 ```
 
-The `conduit` service runs `conduit once` and exits. First boot pulls the
-Ollama model (~400 MB for `qwen2.5:0.5b`); subsequent runs reuse the
+The `conduit` service runs `conduit once` and exits; the `--exit-code-from`
+flag makes the whole stack stop with conduit's exit code. First boot pulls
+the Ollama model (~400 MB for `qwen2.5:0.5b`); subsequent runs reuse the
 `ollama-models` named volume.
 
 ## What to look for
