@@ -22,7 +22,7 @@ npm install -g @ausernamedtom/conduit
 
 ## Plugin authors
 
-To build a custom tracker or runner, implement the interface from this package and publish it as `conduit-tracker-<vendor>` or `conduit-runner-<vendor>-<mechanism>`. See the [API reference](/conduit/api/) for the exact types.
+To build a custom tracker or runner, implement the interface from this package and publish it as `conduit-tracker-<vendor>` or `conduit-runner-<vendor>-<mechanism>`. See the [API reference](/api/) for the exact types.
 
 ## Source
 

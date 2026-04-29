@@ -5,7 +5,7 @@ description: Install Conduit, configure a workflow, and run your first agent loo
 
 Conduit polls an issue tracker, dispatches a coding agent for each eligible issue inside an isolated git worktree, and optionally writes results back. This guide walks through a minimal Linear + OpenAI setup.
 
-> Prefer point-and-click? The [setup wizard](/conduit/guides/wizard/) generates the install command, workflow file, and `.env` from your tracker and runner choices.
+> Prefer point-and-click? The [setup wizard](/guides/wizard/) generates the install command, workflow file, and `.env` from your tracker and runner choices.
 
 ## Install
 
@@ -13,7 +13,7 @@ Conduit polls an issue tracker, dispatches a coding agent for each eligible issu
 npm install -g @ausernamedtom/conduit
 ```
 
-Conduit uses a plugin model — install the tracker and runner you need alongside the core. See [Trackers](/conduit/packages/trackers/github/) and [Runners](/conduit/packages/runners/claude-cli/) for the full list.
+Conduit uses a plugin model — install the tracker and runner you need alongside the core. See [Trackers](/packages/trackers/github/) and [Runners](/packages/runners/claude-cli/) for the full list.
 
 ```bash
 npm install -g @ausernamedtom/conduit-tracker-linear
@@ -87,6 +87,6 @@ Add `--dry-run` to either command to select issues without dispatching agents.
 
 ## Next steps
 
-- [Configuration](/conduit/guides/configuration/) — workspace and state paths, secrets, plugins.
-- [Tracker writes](/conduit/reference/tracker-writes/) — enable comments and state transitions.
-- [Non-intrusive use](/conduit/reference/non-intrusive-use/) — run against external repos without leaving artifacts.
+- [Configuration](/guides/configuration/) — workspace and state paths, secrets, plugins.
+- [Tracker writes](/reference/tracker-writes/) — enable comments and state transitions.
+- [Non-intrusive use](/reference/non-intrusive-use/) — run against external repos without leaving artifacts.

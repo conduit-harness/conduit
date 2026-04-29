@@ -110,12 +110,12 @@ conduit version
 
 ## Documentation
 
-Full docs, package guides, and the API reference live at **<https://ausernamedtom.github.io/conduit/>**.
+Full docs, package guides, and the API reference live at **<https://conduit.tomhofman.dev/>**.
 
-- [Quickstart](https://ausernamedtom.github.io/conduit/guides/quickstart/)
-- [Configuration](https://ausernamedtom.github.io/conduit/guides/configuration/)
-- [Tracker writes](https://ausernamedtom.github.io/conduit/reference/tracker-writes/) — configuring comments and state transitions
-- [Non-intrusive use](https://ausernamedtom.github.io/conduit/reference/non-intrusive-use/) — running against external repos without leaving artifacts
-- [Status](https://ausernamedtom.github.io/conduit/reference/status/) — current capabilities and known limitations
-- [Symphony specification](https://ausernamedtom.github.io/conduit/reference/spec/) — the upstream spec this implementation follows
+- [Quickstart](https://conduit.tomhofman.dev/guides/quickstart/)
+- [Configuration](https://conduit.tomhofman.dev/guides/configuration/)
+- [Tracker writes](https://conduit.tomhofman.dev/reference/tracker-writes/) — configuring comments and state transitions
+- [Non-intrusive use](https://conduit.tomhofman.dev/reference/non-intrusive-use/) — running against external repos without leaving artifacts
+- [Status](https://conduit.tomhofman.dev/reference/status/) — current capabilities and known limitations
+- [Symphony specification](https://conduit.tomhofman.dev/reference/spec/) — the upstream spec this implementation follows
 - [CONTRIBUTING.md](CONTRIBUTING.md) — development setup and contribution guidelines

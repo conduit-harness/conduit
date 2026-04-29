@@ -27,7 +27,7 @@ tracker:
 
 ## Notes
 
-GitHub Issues only supports two states: `open` and `closed`. `transition_to` values that map to a terminal state close the issue; all others reopen it. See [Tracker writes](/conduit/reference/tracker-writes/).
+GitHub Issues only supports two states: `open` and `closed`. `transition_to` values that map to a terminal state close the issue; all others reopen it. See [Tracker writes](/reference/tracker-writes/).
 
 ## Source
 

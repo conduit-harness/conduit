@@ -28,7 +28,7 @@ state:
   root: ~/conduit/state/customer-project
 ```
 
-See [Non-intrusive use](/conduit/reference/non-intrusive-use/) for the external-tool layout.
+See [Non-intrusive use](/reference/non-intrusive-use/) for the external-tool layout.
 
 ## Secrets
 
