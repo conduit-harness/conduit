@@ -1,4 +1,7 @@
-# Non-intrusive use
+---
+title: Non-intrusive use
+description: Run Conduit against external repositories without committing tool-specific files.
+---
 
 Conduit is designed to run as an external tool against target repositories — it does not need to be installed into a project.
 

@@ -108,10 +108,14 @@ conduit version
 
 `--dry-run` selects issues without dispatching agents. `--preflight` requires external credentials to be present.
 
-## Further reading
+## Documentation
 
-- [docs/tracker-writes.md](docs/tracker-writes.md) — configuring comments and state transitions
-- [docs/non-intrusive-use.md](docs/non-intrusive-use.md) — running against external repos without leaving artifacts
-- [docs/status.md](docs/status.md) — current capabilities and known limitations
-- [docs/SPEC.md](docs/SPEC.md) — the Symphony specification this implementation follows
+Full docs, package guides, and the API reference live at **<https://ausernamedtom.github.io/conduit/>**.
+
+- [Quickstart](https://ausernamedtom.github.io/conduit/guides/quickstart/)
+- [Configuration](https://ausernamedtom.github.io/conduit/guides/configuration/)
+- [Tracker writes](https://ausernamedtom.github.io/conduit/reference/tracker-writes/) — configuring comments and state transitions
+- [Non-intrusive use](https://ausernamedtom.github.io/conduit/reference/non-intrusive-use/) — running against external repos without leaving artifacts
+- [Status](https://ausernamedtom.github.io/conduit/reference/status/) — current capabilities and known limitations
+- [Symphony specification](https://ausernamedtom.github.io/conduit/reference/spec/) — the upstream spec this implementation follows
 - [CONTRIBUTING.md](CONTRIBUTING.md) — development setup and contribution guidelines
