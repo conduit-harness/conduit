@@ -1,0 +1,76 @@
+name: End-to-end smoke test
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    name: compose up + assert
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: examples/docker-ollama-github
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare env
+        run: cp .env.example .env
+
+      - name: Build images
+        run: docker compose build
+
+      - name: Run harness (conduit once)
+        run: docker compose up --abort-on-container-exit --exit-code-from conduit
+
+      - name: Capture service logs
+        if: always()
+        run: |
+          mkdir -p ../../.harness-logs
+          docker compose logs mock-github > ../../.harness-logs/mock-github.log
+          docker compose logs conduit    > ../../.harness-logs/conduit.log
+          docker compose logs ollama     > ../../.harness-logs/ollama.log
+          echo "=== mock-github ==="; cat ../../.harness-logs/mock-github.log
+          echo "=== conduit ==="    ; cat ../../.harness-logs/conduit.log
+
+      - name: Assert mock-github saw expected traffic
+        run: |
+          log=../../.harness-logs/mock-github.log
+          fail() { echo "ASSERTION FAILED: $1"; exit 1; }
+          grep -qF "GET /repos/testorg/testrepo/issues?state=open" "$log" \
+            || fail "no candidate-fetch GET"
+          comments=$(grep -cF "POST /repos/testorg/testrepo/issues/1/comments" "$log" || true)
+          [ "${comments:-0}" -ge 2 ] \
+            || fail "expected >=2 comment POSTs, got ${comments:-0}"
+          grep -qF "PATCH /repos/testorg/testrepo/issues/1" "$log" \
+            || fail "no state-transition PATCH"
+          grep -qF "issue #1 state -> closed" "$log" \
+            || fail "issue did not transition to closed"
+
+      - name: Assert conduit ran the agent successfully
+        run: |
+          log=../../.harness-logs/conduit.log
+          fail() { echo "ASSERTION FAILED: $1"; exit 1; }
+          grep -qF '"message":"agent finished"' "$log" \
+            || fail "no agent-finished log line"
+          grep -qF '"status":"succeeded"' "$log" \
+            || fail "agent did not report succeeded"
+          grep -qF '"message":"llm request sent"' "$log" \
+            || fail "conduit never sent a prompt to the LLM"
+          grep -qF '"message":"llm response received"' "$log" \
+            || fail "conduit never received a response from the LLM"
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-logs
+          path: .harness-logs/
+          if-no-files-found: ignore
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v --remove-orphans

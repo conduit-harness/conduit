@@ -4,7 +4,7 @@ import { BaseTracker } from "@ausernamedtom/conduit";
 function str(v: unknown): string | undefined { return typeof v === "string" && v.length > 0 ? v : undefined; }
 
 export default class GitHubTrackerClient extends BaseTracker {
-  private readonly base = "https://api.github.com";
+  private readonly base: string;
   private readonly owner: string;
   private readonly repo: string;
   private readonly apiKey: string | undefined;
@@ -12,6 +12,7 @@ export default class GitHubTrackerClient extends BaseTracker {
   constructor(config: ServiceConfig, private readonly fetchImpl: typeof fetch = fetch) {
     super(config);
     const raw = config.tracker.raw;
+    this.base = (str(raw.base_url) ?? "https://api.github.com").replace(/\/+$/, "");
     this.owner = str(raw.owner) ?? "";
     this.repo = str(raw.repo) ?? "";
     this.apiKey = str(raw.api_key) ?? str(raw.token) ?? process.env.GITHUB_TOKEN;

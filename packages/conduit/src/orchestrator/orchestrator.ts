@@ -32,7 +32,9 @@ export class Orchestrator {
     await this.safeWrite("on_start", issue, `Conduit started attempt ${attemptNo} on branch ${workspace.branchName}.`);
     const prompt = renderPrompt(this.workflow.promptTemplate, { issue, workspace, attempt, config: this.config });
     this.logger.info("agent starting", { issue: issue.identifier, attempt: attemptNo, workspace: workspace.path });
+    this.logger.info("llm request sent", { issue: issue.identifier, promptChars: prompt.length });
     const result = await this.agent.run(attempt, prompt);
+    this.logger.info("llm response received", { issue: issue.identifier, status: result.status, outputChars: result.output.length });
     const finalAttempt: RunAttempt = { ...attempt, status: result.status, finishedAt: new Date().toISOString() };
     if (result.error) finalAttempt.error = result.error;
     await this.state.appendAttempt(finalAttempt);

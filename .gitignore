@@ -3,7 +3,7 @@
 !.env.example
 .conduit/state/
 .conduit/workspaces/
-WORKFLOW.md
+/WORKFLOW.md
 coverage/
 dist/
 node_modules/
