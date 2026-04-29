@@ -38,3 +38,4 @@ jobs:
 
       - name: Package smoke test
         run: npm pack --dry-run
+        working-directory: packages/conduit
