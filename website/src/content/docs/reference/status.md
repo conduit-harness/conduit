@@ -1,6 +1,9 @@
-# Status
+---
+title: Status
+description: Current capabilities, limitations, and spec coverage.
+---
 
-Conduit is an early implementation of the [Symphony specification](SPEC.md). It is functional for controlled local runs but several production concerns are intentionally simple:
+Conduit is an early implementation of the [Symphony specification](/conduit/reference/spec/). It is functional for controlled local runs but several production concerns are intentionally simple:
 
 ## Current capabilities
 
@@ -25,8 +28,8 @@ Conduit is an early implementation of the [Symphony specification](SPEC.md). It 
 
 ## Plugin support
 
-Trackers and agent runners are loaded as npm packages at runtime. If a required plugin is missing, Conduit reports a clear install instruction. See the [main README](../README.md) for the plugin table.
+Trackers and agent runners are loaded as npm packages at runtime. If a required plugin is missing, Conduit reports a clear install instruction. See the [packages section](/conduit/packages/) for the plugin list.
 
 ## Spec coverage
 
-See [SPEC.md](SPEC.md) for the full Symphony specification. Notable gaps between spec and current implementation are noted in comments in the source.
+See the [Symphony specification](/conduit/reference/spec/) for the full reference. Notable gaps between spec and current implementation are noted in comments in the source.

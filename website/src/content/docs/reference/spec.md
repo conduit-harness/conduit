@@ -1,4 +1,7 @@
-# Symphony Service Specification
+---
+title: Symphony specification
+description: The upstream Symphony service specification that Conduit implements.
+---
 
 Status: Draft v1 (language-agnostic)
 

@@ -1,4 +1,7 @@
-# Tracker writes
+---
+title: Tracker writes
+description: Configure optional comments and state transitions during agent lifecycle events.
+---
 
 All tracker plugins support an optional writes configuration that controls whether Conduit posts comments or transitions issue state during a run.
 
