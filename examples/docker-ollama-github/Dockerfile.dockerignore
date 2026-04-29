@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/coverage
+.git
+.github
+docs
+examples
+.env
+.env.*
+!.env.example
+.conduit/state
+.conduit/workspaces
