@@ -17,10 +17,15 @@ services:
       - ./mock-github:/srv:ro
     command: ["node", "/srv/server.mjs"]
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O- --header='Authorization: Bearer x' http://localhost:3000/repos/testorg/testrepo/issues || exit 1"]
+      test:
+        - CMD
+        - node
+        - -e
+        - require("http").get("http://127.0.0.1:3000/__health",r=>process.exit(r.statusCode===200?0:1)).on("error",()=>process.exit(1))
       interval: 3s
       timeout: 3s
-      retries: 10
+      retries: 20
+      start_period: 5s
 
   conduit:
     build:

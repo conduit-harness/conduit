@@ -36,6 +36,11 @@ const commentRoute = /^\/repos\/[^/]+\/[^/]+\/issues\/(\d+)\/comments\/?$/;
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", "http://mock-github");
+
+  if (req.method === "GET" && url.pathname === "/__health") {
+    return send(res, 200, { ok: true });
+  }
+
   const auth = req.headers.authorization ?? "";
   log(req.method, url.pathname + url.search, auth ? "(auth ok)" : "(no auth)");
 
