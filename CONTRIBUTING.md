@@ -129,7 +129,7 @@ conduit/<issue-key>/<attempt>
 
 ## Editing docs
 
-User-facing documentation lives under `website/src/content/docs/` and is published to <https://ausernamedtom.github.io/conduit/> via the `Deploy website` workflow on every push to `main`.
+User-facing documentation lives under `website/src/content/docs/` and is published to <https://conduit.tomhofman.dev/> via the `Deploy website` workflow on every push to `main`.
 
 Preview changes locally:
 

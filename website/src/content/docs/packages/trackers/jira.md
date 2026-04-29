@@ -29,7 +29,7 @@ tracker:
 
 ## Notes
 
-Jira transitions are matched by name against the available transitions for the issue. The transition must exist in the issue's current workflow step. See [Tracker writes](/conduit/reference/tracker-writes/).
+Jira transitions are matched by name against the available transitions for the issue. The transition must exist in the issue's current workflow step. See [Tracker writes](/reference/tracker-writes/).
 
 ## Source
 

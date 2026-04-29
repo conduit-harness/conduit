@@ -27,7 +27,7 @@ tracker:
 
 ## Notes
 
-State names must match exactly what is configured in your Linear team workflow (e.g. `Todo`, `In Progress`, `In Review`). Failed tracker writes do not fail the agent run unless strict mode is configured. See [Tracker writes](/conduit/reference/tracker-writes/).
+State names must match exactly what is configured in your Linear team workflow (e.g. `Todo`, `In Progress`, `In Review`). Failed tracker writes do not fail the agent run unless strict mode is configured. See [Tracker writes](/reference/tracker-writes/).
 
 ## Source
 

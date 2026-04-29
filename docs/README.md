@@ -1,6 +1,6 @@
 # Documentation
 
-Conduit's documentation now lives at **<https://ausernamedtom.github.io/conduit/>**.
+Conduit's documentation now lives at **<https://conduit.tomhofman.dev/>**.
 
 The markdown source is under [`website/src/content/docs/`](../website/src/content/docs). To preview locally:
 

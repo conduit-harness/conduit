@@ -6,8 +6,7 @@ import { createStarlightTypeDocPlugin } from "starlight-typedoc";
 const [coreTypeDoc, coreTypeDocSidebar] = createStarlightTypeDocPlugin();
 
 export default defineConfig({
-  site: "https://ausernamedtom.github.io",
-  base: "/conduit/",
+  site: "https://conduit.tomhofman.dev",
   integrations: [
     starlight({
       title: "Conduit",

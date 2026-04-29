@@ -27,7 +27,7 @@ tracker:
 
 ## Notes
 
-GitLab issues support `opened` and `closed` states. Use the appropriate value for `transition_to`. See [Tracker writes](/conduit/reference/tracker-writes/).
+GitLab issues support `opened` and `closed` states. Use the appropriate value for `transition_to`. See [Tracker writes](/reference/tracker-writes/).
 
 ## Source
 
