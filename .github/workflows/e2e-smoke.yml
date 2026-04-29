@@ -1,28 +1,9 @@
-name: Docker harness
+name: End-to-end smoke test
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'examples/docker-ollama-github/**'
-      - 'packages/conduit/**'
-      - 'packages/conduit-tracker-github/**'
-      - 'packages/conduit-runner-openai-api/**'
-      - 'pnpm-workspace.yaml'
-      - 'pnpm-lock.yaml'
-      - 'tsconfig.base.json'
-      - '.github/workflows/docker-harness.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'examples/docker-ollama-github/**'
-      - 'packages/conduit/**'
-      - 'packages/conduit-tracker-github/**'
-      - 'packages/conduit-runner-openai-api/**'
-      - 'pnpm-workspace.yaml'
-      - 'pnpm-lock.yaml'
-      - 'tsconfig.base.json'
-      - '.github/workflows/docker-harness.yml'
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
 
 jobs:
@@ -72,10 +53,15 @@ jobs:
       - name: Assert conduit ran the agent successfully
         run: |
           log=../../.harness-logs/conduit.log
+          fail() { echo "ASSERTION FAILED: $1"; exit 1; }
           grep -qF '"message":"agent finished"' "$log" \
-            || { echo "ASSERTION FAILED: no agent-finished log line"; exit 1; }
+            || fail "no agent-finished log line"
           grep -qF '"status":"succeeded"' "$log" \
-            || { echo "ASSERTION FAILED: agent did not report succeeded"; exit 1; }
+            || fail "agent did not report succeeded"
+          grep -qF '"message":"llm request sent"' "$log" \
+            || fail "conduit never sent a prompt to the LLM"
+          grep -qF '"message":"llm response received"' "$log" \
+            || fail "conduit never received a response from the LLM"
 
       - name: Upload logs on failure
         if: failure()
