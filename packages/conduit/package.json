@@ -1,15 +1,15 @@
 {
-  "name": "@ausernamedtom/conduit",
-  "version": "0.1.2",
+  "name": "@conduit-harness/conduit",
+  "version": "0.0.1",
   "description": "Conduit: a TypeScript implementation of the Symphony service specification",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ausernamedtom/conduit.git"
+    "url": "git+https://github.com/conduit-harness/conduit.git"
   },
   "bugs": {
-    "url": "https://github.com/ausernamedtom/conduit/issues"
+    "url": "https://github.com/conduit-harness/conduit/issues"
   },
-  "homepage": "https://github.com/ausernamedtom/conduit#readme",
+  "homepage": "https://github.com/conduit-harness/conduit#readme",
   "type": "module",
   "bin": {
     "conduit": "dist/cli/index.js"

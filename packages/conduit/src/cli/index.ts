@@ -78,7 +78,7 @@ async function appendGitIgnore(repo: string) {
 }
 
 async function loadPlugin<T>(role: "tracker" | "runner", kind: string, config: ReturnType<typeof buildConfig>): Promise<T> {
-  const pkg = `@ausernamedtom/conduit-${role}-${kind}`;
+  const pkg = `@conduit-harness/conduit-${role}-${kind}`;
   try {
     const mod = await import(pkg) as { default: new (cfg: typeof config) => T };
     return new mod.default(config);

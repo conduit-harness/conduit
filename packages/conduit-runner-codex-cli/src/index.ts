@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import type { AgentResult, AgentRunner, RunAttempt, ServiceConfig } from "@ausernamedtom/conduit";
+import type { AgentResult, AgentRunner, RunAttempt, ServiceConfig } from "@conduit-harness/conduit";
 
 function str(v: unknown, fallback: string): string { return typeof v === "string" && v.length > 0 ? v : fallback; }
 function num(v: unknown, fallback: number): number { const n = typeof v === "string" ? Number.parseInt(v, 10) : typeof v === "number" ? v : NaN; return Number.isFinite(n) ? n : fallback; }

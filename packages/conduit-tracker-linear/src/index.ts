@@ -1,5 +1,5 @@
-import type { Issue, ServiceConfig } from "@ausernamedtom/conduit";
-import { BaseTracker } from "@ausernamedtom/conduit";
+import type { Issue, ServiceConfig } from "@conduit-harness/conduit";
+import { BaseTracker } from "@conduit-harness/conduit";
 
 const CANDIDATES_BY_PROJECT = `query ConduitCandidateIssuesByProject($projectSlug: String!, $stateNames: [String!], $first: Int!, $after: String) {
   issues(filter: { project: { slugId: { eq: $projectSlug } }, state: { name: { in: $stateNames } } }, first: $first, after: $after, orderBy: updatedAt) {

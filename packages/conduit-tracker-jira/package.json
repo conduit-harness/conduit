@@ -1,6 +1,6 @@
 {
-  "name": "@ausernamedtom/conduit-tracker-jira",
-  "version": "0.1.2",
+  "name": "@conduit-harness/conduit-tracker-jira",
+  "version": "0.0.1",
   "description": "Conduit tracker plugin for Jira",
   "type": "module",
   "exports": {
@@ -13,9 +13,9 @@
   },
   "publishConfig": { "access": "public" },
   "engines": { "node": ">=24.0.0" },
-  "peerDependencies": { "@ausernamedtom/conduit": ">=0.1.0" },
+  "peerDependencies": { "@conduit-harness/conduit": ">=0.0.1" },
   "devDependencies": {
-    "@ausernamedtom/conduit": "workspace:*",
+    "@conduit-harness/conduit": "workspace:*",
     "@types/node": "latest",
     "typescript": "latest"
   }

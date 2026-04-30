@@ -1,5 +1,5 @@
-import type { Issue, ServiceConfig } from "@ausernamedtom/conduit";
-import { BaseTracker } from "@ausernamedtom/conduit";
+import type { Issue, ServiceConfig } from "@conduit-harness/conduit";
+import { BaseTracker } from "@conduit-harness/conduit";
 
 function str(v: unknown, fallback?: string): string | undefined { return typeof v === "string" && v.length > 0 ? v : fallback; }
 function num(v: unknown, fallback: number): number { const n = typeof v === "string" ? Number.parseInt(v, 10) : typeof v === "number" ? v : NaN; return Number.isFinite(n) ? n : fallback; }

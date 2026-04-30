@@ -1,15 +1,13 @@
 name: Release to npm
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Git tag to publish (e.g. v0.1.0)"
-        required: false
+      version:
+        description: "Version to release (e.g. 0.0.1)"
+        required: true
         type: string
+        default: "0.0.1"
 
 permissions:
   contents: write
@@ -18,11 +16,14 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
+      TAG: v${{ inputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -35,6 +36,23 @@ jobs:
           node-version: 24
           cache: pnpm
           registry-url: https://registry.npmjs.org
+
+      - name: Verify package versions match input
+        run: |
+          for pkg in packages/*/package.json; do
+            actual=$(node -p "require('./${pkg}').version")
+            if [ "$actual" != "$VERSION" ]; then
+              echo "::error file=${pkg}::version mismatch — package=${actual} workflow_input=${VERSION}"
+              exit 1
+            fi
+          done
+
+      - name: Verify tag does not already exist
+        run: |
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "::error::tag ${TAG} already exists"
+            exit 1
+          fi
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -49,13 +67,27 @@ jobs:
         run: pnpm build
 
       - name: Verify package contents
-        run: npm pack --dry-run
+        run: pnpm -r --filter "./packages/*" exec npm pack --dry-run
 
-      - name: Publish to npm
-        run: npm publish --access public --provenance
+      - name: Publish packages to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+        run: pnpm -r --filter "./packages/*" publish --access public --no-git-checks
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push tag
+        run: |
+          git tag -a "${TAG}" -m "Release ${TAG}"
+          git push origin "${TAG}"
 
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.TAG }}
+          name: ${{ env.TAG }}
           generate_release_notes: true

@@ -7,10 +7,6 @@ description: Read Jira issues and optionally post comments or transition states.
 
 ## Install
 
-:::caution
-The `@conduit-harness` packages on npm are **not yet published**. The install command below will fail until the initial release lands.
-:::
-
 ```bash
 npm install -g @conduit-harness/conduit-tracker-jira
 ```

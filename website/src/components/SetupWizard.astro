@@ -183,19 +183,19 @@
     }
 
     function trackerPackage(t: TrackerKind) {
-      return `@ausernamedtom/conduit-tracker-${t}`;
+      return `@conduit-harness/conduit-tracker-${t}`;
     }
 
     function runnerPackage(r: RunnerKind) {
       // claude-api maps onto the openai-api runner against Anthropic's
       // OpenAI-compatible endpoint, so the package is the same.
-      if (r === "claude-api") return "@ausernamedtom/conduit-runner-openai-api";
-      return `@ausernamedtom/conduit-runner-${r}`;
+      if (r === "claude-api") return "@conduit-harness/conduit-runner-openai-api";
+      return `@conduit-harness/conduit-runner-${r}`;
     }
 
     function buildInstall(): string {
       const pkgs = [
-        "@ausernamedtom/conduit",
+        "@conduit-harness/conduit",
         trackerPackage(state.tracker),
         runnerPackage(state.runner),
       ];

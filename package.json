@@ -3,8 +3,8 @@
   "private": true,
   "packageManager": "pnpm@10.10.0",
   "scripts": {
-    "build": "pnpm --filter @ausernamedtom/conduit build && pnpm -r --filter '!@ausernamedtom/conduit' build",
-    "test": "pnpm --filter @ausernamedtom/conduit test",
-    "typecheck": "pnpm --filter @ausernamedtom/conduit typecheck"
+    "build": "pnpm --filter @conduit-harness/conduit build && pnpm -r --filter '!@conduit-harness/conduit' build",
+    "test": "pnpm --filter @conduit-harness/conduit test",
+    "typecheck": "pnpm --filter @conduit-harness/conduit typecheck"
   }
 }
