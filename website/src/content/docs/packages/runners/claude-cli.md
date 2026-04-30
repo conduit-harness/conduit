@@ -25,4 +25,4 @@ claude-cli:
 
 ## Source
 
-[`packages/conduit-runner-claude-cli`](https://github.com/ausernamedtom/conduit/tree/main/packages/conduit-runner-claude-cli)
+[`packages/conduit-runner-claude-cli`](https://github.com/conduit-harness/conduit/tree/main/packages/conduit-runner-claude-cli)

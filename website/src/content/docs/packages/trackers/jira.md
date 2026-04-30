@@ -3,6 +3,10 @@ title: Jira tracker
 description: Read Jira issues and optionally post comments or transition states.
 ---
 
+:::caution[Coming soon]
+This package is not yet published. Only the [GitHub tracker](/packages/trackers/github/) is available in 0.0.1.
+:::
+
 `@conduit-harness/conduit-tracker-jira` reads issues from a Jira project and optionally writes back via comments and workflow transitions.
 
 ## Install
@@ -33,4 +37,4 @@ Jira transitions are matched by name against the available transitions for the i
 
 ## Source
 
-[`packages/conduit-tracker-jira`](https://github.com/ausernamedtom/conduit/tree/main/packages/conduit-tracker-jira)
+[`packages/conduit-tracker-jira`](https://github.com/conduit-harness/conduit/tree/main/packages/conduit-tracker-jira)

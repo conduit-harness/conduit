@@ -3,6 +3,10 @@ title: GitLab tracker
 description: Read GitLab issues and optionally post comments or close/reopen issues.
 ---
 
+:::caution[Coming soon]
+This package is not yet published. Only the [GitHub tracker](/packages/trackers/github/) is available in 0.0.1.
+:::
+
 `@conduit-harness/conduit-tracker-gitlab` reads issues from a GitLab project and optionally writes back via comments and opened/closed transitions.
 
 ## Install
@@ -31,4 +35,4 @@ GitLab issues support `opened` and `closed` states. Use the appropriate value fo
 
 ## Source
 
-[`packages/conduit-tracker-gitlab`](https://github.com/ausernamedtom/conduit/tree/main/packages/conduit-tracker-gitlab)
+[`packages/conduit-tracker-gitlab`](https://github.com/conduit-harness/conduit/tree/main/packages/conduit-tracker-gitlab)

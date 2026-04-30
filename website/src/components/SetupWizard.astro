@@ -9,9 +9,9 @@
       <h3>1. Pick a tracker</h3>
       <div class="choices" role="radiogroup" aria-label="Tracker">
         <label><input type="radio" name="tracker" value="github" checked /> <span>GitHub Issues</span></label>
-        <label><input type="radio" name="tracker" value="linear" /> <span>Linear</span></label>
-        <label><input type="radio" name="tracker" value="jira" /> <span>Jira</span></label>
-        <label><input type="radio" name="tracker" value="gitlab" /> <span>GitLab</span></label>
+        <label class="coming-soon"><input type="radio" name="tracker" value="linear" disabled /> <span>Linear <em>(coming soon)</em></span></label>
+        <label class="coming-soon"><input type="radio" name="tracker" value="jira" disabled /> <span>Jira <em>(coming soon)</em></span></label>
+        <label class="coming-soon"><input type="radio" name="tracker" value="gitlab" disabled /> <span>GitLab <em>(coming soon)</em></span></label>
       </div>
       <div class="tracker-fields">
         <div data-tracker-field="github">
@@ -44,9 +44,8 @@
       <h3>2. Pick a runner</h3>
       <div class="choices" role="radiogroup" aria-label="Runner">
         <label><input type="radio" name="runner" value="claude-cli" checked /> <span>Claude Code CLI</span></label>
-        <label><input type="radio" name="runner" value="claude-api" /> <span>Claude API key</span></label>
-        <label><input type="radio" name="runner" value="openai-api" /> <span>OpenAI-compatible</span></label>
-        <label><input type="radio" name="runner" value="codex-cli" /> <span>OpenAI Codex CLI</span></label>
+        <label class="coming-soon"><input type="radio" name="runner" value="codex-cli" disabled /> <span>OpenAI Codex CLI <em>(coming soon)</em></span></label>
+        <label class="coming-soon"><input type="radio" name="runner" value="openai-api" disabled /> <span>OpenAI-compatible API <em>(coming soon)</em></span></label>
       </div>
       <div class="runner-fields">
         <div data-runner-field="claude-cli">
@@ -461,5 +460,14 @@
   }
   .wizard button[data-copy]:hover {
     border-color: var(--sl-color-accent);
+  }
+  .choices label.coming-soon {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .choices label.coming-soon em {
+    font-style: normal;
+    font-size: 0.8em;
+    color: var(--sl-color-gray-3);
   }
 </style>

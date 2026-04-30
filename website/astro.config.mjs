@@ -13,11 +13,11 @@ export default defineConfig({
       description:
         "Agentic coding scheduler — read issues, run agents in isolated worktrees, write results back.",
       social: {
-        github: "https://github.com/ausernamedtom/conduit",
+        github: "https://github.com/conduit-harness/conduit",
       },
       editLink: {
         baseUrl:
-          "https://github.com/ausernamedtom/conduit/edit/main/website/",
+          "https://github.com/conduit-harness/conduit/edit/main/website/",
       },
       plugins: [
         coreTypeDoc({

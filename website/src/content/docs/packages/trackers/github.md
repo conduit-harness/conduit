@@ -41,4 +41,4 @@ GitHub Issues only supports two states: `open` and `closed`. `transition_to` val
 
 ## Source
 
-[`packages/conduit-tracker-github`](https://github.com/ausernamedtom/conduit/tree/main/packages/conduit-tracker-github)
+[`packages/conduit-tracker-github`](https://github.com/conduit-harness/conduit/tree/main/packages/conduit-tracker-github)

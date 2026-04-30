@@ -3,6 +3,10 @@ title: Linear tracker
 description: Read Linear issues and optionally post comments or transition states.
 ---
 
+:::caution[Coming soon]
+This package is not yet published. Only the [GitHub tracker](/packages/trackers/github/) is available in 0.0.1.
+:::
+
 `@conduit-harness/conduit-tracker-linear` reads issues from a Linear team and optionally writes back via comments and named state transitions.
 
 ## Install
@@ -31,4 +35,4 @@ State names must match exactly what is configured in your Linear team workflow (
 
 ## Source
 
-[`packages/conduit-tracker-linear`](https://github.com/ausernamedtom/conduit/tree/main/packages/conduit-tracker-linear)
+[`packages/conduit-tracker-linear`](https://github.com/conduit-harness/conduit/tree/main/packages/conduit-tracker-linear)

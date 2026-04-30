@@ -3,6 +3,10 @@ title: Codex CLI runner
 description: Run the OpenAI Codex CLI as the coding agent for each issue.
 ---
 
+:::caution[Coming soon]
+This package is not yet published. Only the [Claude CLI runner](/packages/runners/claude-cli/) is available in 0.0.1.
+:::
+
 `@conduit-harness/conduit-runner-codex-cli` invokes the `codex` (OpenAI Codex CLI) as a subprocess inside the issue's worktree.
 
 ## Install
@@ -25,4 +29,4 @@ codex-cli:
 
 ## Source
 
-[`packages/conduit-runner-codex-cli`](https://github.com/ausernamedtom/conduit/tree/main/packages/conduit-runner-codex-cli)
+[`packages/conduit-runner-codex-cli`](https://github.com/conduit-harness/conduit/tree/main/packages/conduit-runner-codex-cli)

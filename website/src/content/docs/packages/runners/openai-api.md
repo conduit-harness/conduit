@@ -3,6 +3,10 @@ title: OpenAI API runner
 description: Drive any OpenAI-compatible chat completions endpoint as the coding agent.
 ---
 
+:::caution[Coming soon]
+This package is not yet published. Only the [Claude CLI runner](/packages/runners/claude-cli/) is available in 0.0.1.
+:::
+
 `@conduit-harness/conduit-runner-openai-api` calls an OpenAI-compatible chat completions endpoint over HTTP. Works with OpenAI, Azure OpenAI, GitHub Models, and other compatible providers.
 
 ## Install
@@ -26,4 +30,4 @@ openai-api:
 
 ## Source
 
-[`packages/conduit-runner-openai-api`](https://github.com/ausernamedtom/conduit/tree/main/packages/conduit-runner-openai-api)
+[`packages/conduit-runner-openai-api`](https://github.com/conduit-harness/conduit/tree/main/packages/conduit-runner-openai-api)
