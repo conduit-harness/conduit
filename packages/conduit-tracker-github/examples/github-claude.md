@@ -35,7 +35,7 @@ Implement the GitHub issue below in this repository.
 
 Issue: {{issue.identifier}} - {{issue.title}}
 URL: {{issue.url}}
-State: {{issue.state}}
+State: {{issue.state.name}}
 Labels: {{issue.labels}}
 Workspace: {{workspace.path}}
 Attempt: {{attempt.number}}
