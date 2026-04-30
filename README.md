@@ -16,6 +16,9 @@ Conduit runs a continuous loop:
 
 ## Install
 
+> [!WARNING]
+> The `@conduit-harness` packages on npm are **not yet published**. The install commands below will fail until the initial release lands. To try Conduit today, clone the repo and run `pnpm install` from the root (see [CONTRIBUTING.md](./CONTRIBUTING.md)).
+
 ```bash
 npm install -g @conduit-harness/conduit
 ```

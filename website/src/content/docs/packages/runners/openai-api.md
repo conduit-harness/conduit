@@ -7,9 +7,14 @@ description: Drive any OpenAI-compatible chat completions endpoint as the coding
 This package is not yet published. Only the [Claude CLI runner](/packages/runners/claude-cli/) is available in 0.0.1.
 :::
 
+
 `@conduit-harness/conduit-runner-openai-api` calls an OpenAI-compatible chat completions endpoint over HTTP. Works with OpenAI, Azure OpenAI, GitHub Models, and other compatible providers.
 
 ## Install
+
+:::caution
+The `@conduit-harness` packages on npm are **not yet published**. The install command below will fail until the initial release lands.
+:::
 
 ```bash
 npm install -g @conduit-harness/conduit-runner-openai-api

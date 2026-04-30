@@ -7,6 +7,10 @@ description: Run Claude Code as the coding agent for each issue.
 
 ## Install
 
+:::caution
+The `@conduit-harness` packages on npm are **not yet published**. The install command below will fail until the initial release lands.
+:::
+
 ```bash
 npm install -g @conduit-harness/conduit-runner-claude-cli
 ```

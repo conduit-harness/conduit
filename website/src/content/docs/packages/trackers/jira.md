@@ -7,9 +7,14 @@ description: Read Jira issues and optionally post comments or transition states.
 This package is not yet published. Only the [GitHub tracker](/packages/trackers/github/) is available in 0.0.1.
 :::
 
+
 `@conduit-harness/conduit-tracker-jira` reads issues from a Jira project and optionally writes back via comments and workflow transitions.
 
 ## Install
+
+:::caution
+The `@conduit-harness` packages on npm are **not yet published**. The install command below will fail until the initial release lands.
+:::
 
 ```bash
 npm install -g @conduit-harness/conduit-tracker-jira
