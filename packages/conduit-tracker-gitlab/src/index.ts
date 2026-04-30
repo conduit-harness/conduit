@@ -1,8 +1,8 @@
 import type { Issue, ServiceConfig } from "@conduit-harness/conduit";
 import { BaseTracker } from "@conduit-harness/conduit";
 
-function str(v: unknown, fallback?: string): string { return typeof v === "string" && v.length > 0 ? v : (fallback ?? ""); }
-function maybeStr(v: unknown): string | undefined { return typeof v === "string" && v.length > 0 ? v : undefined; }
+function str(v: unknown, fallback?: string): string { const s = (typeof v === "string" || typeof v === "number") ? String(v) : ""; return s.length > 0 ? s : (fallback ?? ""); }
+function maybeStr(v: unknown): string | undefined { const s = (typeof v === "string" || typeof v === "number") ? String(v) : ""; return s.length > 0 ? s : undefined; }
 
 export default class GitLabTrackerClient extends BaseTracker {
   private readonly base: string;
