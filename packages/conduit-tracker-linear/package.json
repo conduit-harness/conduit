@@ -12,6 +12,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "publishConfig": { "access": "public" },
+  "repository": { "type": "git", "url": "git+https://github.com/conduit-harness/conduit.git" },
   "engines": { "node": ">=24.0.0" },
   "peerDependencies": { "@conduit-harness/conduit": ">=0.0.1" },
   "devDependencies": {

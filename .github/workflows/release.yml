@@ -75,11 +75,11 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          if npm view @conduit-harness/conduit@${VERSION} version 2>/dev/null | grep -qF "${VERSION}"; then
+          if ( npm view @conduit-harness/conduit@${VERSION} version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit
-          output=$(npm publish --access public 2>&1); code=$?; echo "$output"
+          output=$(npm publish --access public 2>&1) && code=0 || code=$?; echo "$output"
           if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
             echo "Already published, skipping"; exit 0
           fi
@@ -91,11 +91,11 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          if npm view @conduit-harness/conduit-tracker-github@${VERSION} version 2>/dev/null | grep -qF "${VERSION}"; then
+          if ( npm view @conduit-harness/conduit-tracker-github@${VERSION} version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-tracker-github
-          output=$(npm publish --access public 2>&1); code=$?; echo "$output"
+          output=$(npm publish --access public 2>&1) && code=0 || code=$?; echo "$output"
           if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
             echo "Already published, skipping"; exit 0
           fi
@@ -107,11 +107,11 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          if npm view @conduit-harness/conduit-tracker-linear@${VERSION} version 2>/dev/null | grep -qF "${VERSION}"; then
+          if ( npm view @conduit-harness/conduit-tracker-linear@${VERSION} version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-tracker-linear
-          output=$(npm publish --access public 2>&1); code=$?; echo "$output"
+          output=$(npm publish --access public 2>&1) && code=0 || code=$?; echo "$output"
           if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
             echo "Already published, skipping"; exit 0
           fi
@@ -123,11 +123,11 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          if npm view @conduit-harness/conduit-tracker-gitlab@${VERSION} version 2>/dev/null | grep -qF "${VERSION}"; then
+          if ( npm view @conduit-harness/conduit-tracker-gitlab@${VERSION} version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-tracker-gitlab
-          output=$(npm publish --access public 2>&1); code=$?; echo "$output"
+          output=$(npm publish --access public 2>&1) && code=0 || code=$?; echo "$output"
           if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
             echo "Already published, skipping"; exit 0
           fi
@@ -139,11 +139,11 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          if npm view @conduit-harness/conduit-tracker-jira@${VERSION} version 2>/dev/null | grep -qF "${VERSION}"; then
+          if ( npm view @conduit-harness/conduit-tracker-jira@${VERSION} version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-tracker-jira
-          output=$(npm publish --access public 2>&1); code=$?; echo "$output"
+          output=$(npm publish --access public 2>&1) && code=0 || code=$?; echo "$output"
           if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
             echo "Already published, skipping"; exit 0
           fi
@@ -155,11 +155,11 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          if npm view @conduit-harness/conduit-runner-claude-cli@${VERSION} version 2>/dev/null | grep -qF "${VERSION}"; then
+          if ( npm view @conduit-harness/conduit-runner-claude-cli@${VERSION} version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-runner-claude-cli
-          output=$(npm publish --access public 2>&1); code=$?; echo "$output"
+          output=$(npm publish --access public 2>&1) && code=0 || code=$?; echo "$output"
           if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
             echo "Already published, skipping"; exit 0
           fi
@@ -171,11 +171,11 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          if npm view @conduit-harness/conduit-runner-codex-cli@${VERSION} version 2>/dev/null | grep -qF "${VERSION}"; then
+          if ( npm view @conduit-harness/conduit-runner-codex-cli@${VERSION} version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-runner-codex-cli
-          output=$(npm publish --access public 2>&1); code=$?; echo "$output"
+          output=$(npm publish --access public 2>&1) && code=0 || code=$?; echo "$output"
           if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
             echo "Already published, skipping"; exit 0
           fi
@@ -187,11 +187,11 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          if npm view @conduit-harness/conduit-runner-openai-api@${VERSION} version 2>/dev/null | grep -qF "${VERSION}"; then
+          if ( npm view @conduit-harness/conduit-runner-openai-api@${VERSION} version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-runner-openai-api
-          output=$(npm publish --access public 2>&1); code=$?; echo "$output"
+          output=$(npm publish --access public 2>&1) && code=0 || code=$?; echo "$output"
           if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
             echo "Already published, skipping"; exit 0
           fi
@@ -209,7 +209,7 @@ jobs:
             @conduit-harness/conduit-runner-claude-cli \
             @conduit-harness/conduit-runner-codex-cli \
             @conduit-harness/conduit-runner-openai-api; do
-            if npm view "${pkg}@${VERSION}" version 2>/dev/null | grep -qF "${VERSION}"; then
+            if ( npm view "${pkg}@${VERSION}" version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
               echo "✓ ${pkg}@${VERSION}"
             else
               echo "✗ ${pkg}@${VERSION} — NOT found on npm"
