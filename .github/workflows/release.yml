@@ -75,7 +75,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          if npm view @conduit-harness/conduit@${VERSION} version 2>/dev/null | grep -qF "${VERSION}"; then
+          if ( npm view @conduit-harness/conduit@${VERSION} version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit
@@ -91,7 +91,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          if npm view @conduit-harness/conduit-tracker-github@${VERSION} version 2>/dev/null | grep -qF "${VERSION}"; then
+          if ( npm view @conduit-harness/conduit-tracker-github@${VERSION} version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-tracker-github
@@ -107,7 +107,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          if npm view @conduit-harness/conduit-tracker-linear@${VERSION} version 2>/dev/null | grep -qF "${VERSION}"; then
+          if ( npm view @conduit-harness/conduit-tracker-linear@${VERSION} version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-tracker-linear
@@ -123,7 +123,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          if npm view @conduit-harness/conduit-tracker-gitlab@${VERSION} version 2>/dev/null | grep -qF "${VERSION}"; then
+          if ( npm view @conduit-harness/conduit-tracker-gitlab@${VERSION} version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-tracker-gitlab
@@ -139,7 +139,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          if npm view @conduit-harness/conduit-tracker-jira@${VERSION} version 2>/dev/null | grep -qF "${VERSION}"; then
+          if ( npm view @conduit-harness/conduit-tracker-jira@${VERSION} version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-tracker-jira
@@ -155,7 +155,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          if npm view @conduit-harness/conduit-runner-claude-cli@${VERSION} version 2>/dev/null | grep -qF "${VERSION}"; then
+          if ( npm view @conduit-harness/conduit-runner-claude-cli@${VERSION} version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-runner-claude-cli
@@ -171,7 +171,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          if npm view @conduit-harness/conduit-runner-codex-cli@${VERSION} version 2>/dev/null | grep -qF "${VERSION}"; then
+          if ( npm view @conduit-harness/conduit-runner-codex-cli@${VERSION} version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-runner-codex-cli
@@ -187,7 +187,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          if npm view @conduit-harness/conduit-runner-openai-api@${VERSION} version 2>/dev/null | grep -qF "${VERSION}"; then
+          if ( npm view @conduit-harness/conduit-runner-openai-api@${VERSION} version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-runner-openai-api
@@ -209,7 +209,7 @@ jobs:
             @conduit-harness/conduit-runner-claude-cli \
             @conduit-harness/conduit-runner-codex-cli \
             @conduit-harness/conduit-runner-openai-api; do
-            if npm view "${pkg}@${VERSION}" version 2>/dev/null | grep -qF "${VERSION}"; then
+            if ( npm view "${pkg}@${VERSION}" version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
               echo "✓ ${pkg}@${VERSION}"
             else
               echo "✗ ${pkg}@${VERSION} — NOT found on npm"
