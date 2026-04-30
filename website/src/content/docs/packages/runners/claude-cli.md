@@ -3,12 +3,16 @@ title: Claude CLI runner
 description: Run Claude Code as the coding agent for each issue.
 ---
 
-`@ausernamedtom/conduit-runner-claude-cli` invokes the `claude` (Claude Code) CLI as a subprocess inside the issue's worktree.
+`@conduit-harness/conduit-runner-claude-cli` invokes the `claude` (Claude Code) CLI as a subprocess inside the issue's worktree.
 
 ## Install
 
+:::caution
+The `@conduit-harness` packages on npm are **not yet published**. The install command below will fail until the initial release lands.
+:::
+
 ```bash
-npm install -g @ausernamedtom/conduit-runner-claude-cli
+npm install -g @conduit-harness/conduit-runner-claude-cli
 ```
 
 The `claude` binary must be installed and on `PATH`. See the [Claude Code docs](https://docs.claude.com/en/docs/agents-and-tools/claude-code/overview) for setup.

@@ -3,12 +3,16 @@ title: GitHub tracker
 description: Read GitHub Issues and optionally post comments or close/reopen issues.
 ---
 
-`@ausernamedtom/conduit-tracker-github` reads issues from a GitHub repository and optionally writes back via comments and open/closed transitions.
+`@conduit-harness/conduit-tracker-github` reads issues from a GitHub repository and optionally writes back via comments and open/closed transitions.
 
 ## Install
 
+:::caution
+The `@conduit-harness` packages on npm are **not yet published**. The install command below will fail until the initial release lands.
+:::
+
 ```bash
-npm install -g @ausernamedtom/conduit-tracker-github
+npm install -g @conduit-harness/conduit-tracker-github
 ```
 
 ## Workflow snippet

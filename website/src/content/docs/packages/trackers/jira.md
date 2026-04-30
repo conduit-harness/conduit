@@ -3,12 +3,16 @@ title: Jira tracker
 description: Read Jira issues and optionally post comments or transition states.
 ---
 
-`@ausernamedtom/conduit-tracker-jira` reads issues from a Jira project and optionally writes back via comments and workflow transitions.
+`@conduit-harness/conduit-tracker-jira` reads issues from a Jira project and optionally writes back via comments and workflow transitions.
 
 ## Install
 
+:::caution
+The `@conduit-harness` packages on npm are **not yet published**. The install command below will fail until the initial release lands.
+:::
+
 ```bash
-npm install -g @ausernamedtom/conduit-tracker-jira
+npm install -g @conduit-harness/conduit-tracker-jira
 ```
 
 ## Workflow snippet

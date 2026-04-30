@@ -3,12 +3,16 @@ title: GitLab tracker
 description: Read GitLab issues and optionally post comments or close/reopen issues.
 ---
 
-`@ausernamedtom/conduit-tracker-gitlab` reads issues from a GitLab project and optionally writes back via comments and opened/closed transitions.
+`@conduit-harness/conduit-tracker-gitlab` reads issues from a GitLab project and optionally writes back via comments and opened/closed transitions.
 
 ## Install
 
+:::caution
+The `@conduit-harness` packages on npm are **not yet published**. The install command below will fail until the initial release lands.
+:::
+
 ```bash
-npm install -g @ausernamedtom/conduit-tracker-gitlab
+npm install -g @conduit-harness/conduit-tracker-gitlab
 ```
 
 ## Workflow snippet

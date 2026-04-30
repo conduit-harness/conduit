@@ -3,12 +3,16 @@ title: Linear tracker
 description: Read Linear issues and optionally post comments or transition states.
 ---
 
-`@ausernamedtom/conduit-tracker-linear` reads issues from a Linear team and optionally writes back via comments and named state transitions.
+`@conduit-harness/conduit-tracker-linear` reads issues from a Linear team and optionally writes back via comments and named state transitions.
 
 ## Install
 
+:::caution
+The `@conduit-harness` packages on npm are **not yet published**. The install command below will fail until the initial release lands.
+:::
+
 ```bash
-npm install -g @ausernamedtom/conduit-tracker-linear
+npm install -g @conduit-harness/conduit-tracker-linear
 ```
 
 ## Workflow snippet

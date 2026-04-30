@@ -46,13 +46,13 @@ A `.env` file alongside the workflow is loaded automatically; pass `--env PATH` 
 
 Trackers and runners are separate npm packages, loaded by `kind`:
 
-- `tracker.kind: linear` → `@ausernamedtom/conduit-tracker-linear`
-- `tracker.kind: github` → `@ausernamedtom/conduit-tracker-github`
-- `tracker.kind: jira` → `@ausernamedtom/conduit-tracker-jira`
-- `tracker.kind: gitlab` → `@ausernamedtom/conduit-tracker-gitlab`
-- `agent.kind: openai-api` → `@ausernamedtom/conduit-runner-openai-api`
-- `agent.kind: claude-cli` → `@ausernamedtom/conduit-runner-claude-cli`
-- `agent.kind: codex-cli` → `@ausernamedtom/conduit-runner-codex-cli`
+- `tracker.kind: linear` → `@conduit-harness/conduit-tracker-linear`
+- `tracker.kind: github` → `@conduit-harness/conduit-tracker-github`
+- `tracker.kind: jira` → `@conduit-harness/conduit-tracker-jira`
+- `tracker.kind: gitlab` → `@conduit-harness/conduit-tracker-gitlab`
+- `agent.kind: openai-api` → `@conduit-harness/conduit-runner-openai-api`
+- `agent.kind: claude-cli` → `@conduit-harness/conduit-runner-claude-cli`
+- `agent.kind: codex-cli` → `@conduit-harness/conduit-runner-codex-cli`
 
 Install only the plugins you need. If a referenced plugin is missing, Conduit prints the install command.
 

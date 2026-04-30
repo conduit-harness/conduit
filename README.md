@@ -16,8 +16,11 @@ Conduit runs a continuous loop:
 
 ## Install
 
+> [!WARNING]
+> The `@conduit-harness` packages on npm are **not yet published**. The install commands below will fail until the initial release lands. To try Conduit today, clone the repo and run `pnpm install` from the root (see [CONTRIBUTING.md](./CONTRIBUTING.md)).
+
 ```bash
-npm install -g @ausernamedtom/conduit
+npm install -g @conduit-harness/conduit
 ```
 
 Conduit uses a plugin model — install the tracker and runner you need alongside the core.
@@ -26,18 +29,18 @@ Conduit uses a plugin model — install the tracker and runner you need alongsid
 
 | Tracker | `tracker.kind` | Install |
 |---------|---------------|---------|
-| Linear | `linear` | `npm install -g @ausernamedtom/conduit-tracker-linear` |
-| GitHub | `github` | `npm install -g @ausernamedtom/conduit-tracker-github` |
-| Jira   | `jira`   | `npm install -g @ausernamedtom/conduit-tracker-jira` |
-| GitLab | `gitlab` | `npm install -g @ausernamedtom/conduit-tracker-gitlab` |
+| Linear | `linear` | `npm install -g @conduit-harness/conduit-tracker-linear` |
+| GitHub | `github` | `npm install -g @conduit-harness/conduit-tracker-github` |
+| Jira   | `jira`   | `npm install -g @conduit-harness/conduit-tracker-jira` |
+| GitLab | `gitlab` | `npm install -g @conduit-harness/conduit-tracker-gitlab` |
 
 ### Runners
 
 | Runner | `agent.kind` | Mechanism | Install |
 |--------|-------------|-----------|---------|
-| OpenAI API  | `openai-api` | HTTP — any OpenAI-compatible chat completions endpoint | `npm install -g @ausernamedtom/conduit-runner-openai-api` |
-| Claude CLI  | `claude-cli` | CLI subprocess — requires `claude` (Claude Code) installed | `npm install -g @ausernamedtom/conduit-runner-claude-cli` |
-| Codex CLI   | `codex-cli`  | CLI subprocess — requires `codex` (OpenAI Codex CLI) installed | `npm install -g @ausernamedtom/conduit-runner-codex-cli` |
+| OpenAI API  | `openai-api` | HTTP — any OpenAI-compatible chat completions endpoint | `npm install -g @conduit-harness/conduit-runner-openai-api` |
+| Claude CLI  | `claude-cli` | CLI subprocess — requires `claude` (Claude Code) installed | `npm install -g @conduit-harness/conduit-runner-claude-cli` |
+| Codex CLI   | `codex-cli`  | CLI subprocess — requires `codex` (OpenAI Codex CLI) installed | `npm install -g @conduit-harness/conduit-runner-codex-cli` |
 
 Each plugin package includes an example workflow under its own `examples/` directory.
 

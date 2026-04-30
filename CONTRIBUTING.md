@@ -93,7 +93,7 @@ Unknown workflow keys should continue to be ignored for forward compatibility un
 
 ## Tracker plugin changes
 
-Tracker plugins live in `packages/conduit-tracker-*`. Each exports a default class extending `BaseTracker` from `@ausernamedtom/conduit`.
+Tracker plugins live in `packages/conduit-tracker-*`. Each exports a default class extending `BaseTracker` from `@conduit-harness/conduit`.
 
 When changing a tracker plugin:
 

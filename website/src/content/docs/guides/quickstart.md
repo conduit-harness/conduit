@@ -9,15 +9,19 @@ Conduit polls an issue tracker, dispatches a coding agent for each eligible issu
 
 ## Install
 
+:::caution
+The `@conduit-harness` packages on npm are **not yet published**. The install commands below will fail until the initial release lands. To try Conduit today, clone the repo and run `pnpm install` from the root.
+:::
+
 ```bash
-npm install -g @ausernamedtom/conduit
+npm install -g @conduit-harness/conduit
 ```
 
 Conduit uses a plugin model — install the tracker and runner you need alongside the core. See [Trackers](/packages/trackers/github/) and [Runners](/packages/runners/claude-cli/) for the full list.
 
 ```bash
-npm install -g @ausernamedtom/conduit-tracker-linear
-npm install -g @ausernamedtom/conduit-runner-openai-api
+npm install -g @conduit-harness/conduit-tracker-linear
+npm install -g @conduit-harness/conduit-runner-openai-api
 ```
 
 ## Workflow file
