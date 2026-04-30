@@ -3,10 +3,6 @@ title: "@conduit-harness/conduit"
 description: Core orchestrator package — CLI, workflow parser, runner harness, and plugin interfaces.
 ---
 
-:::caution
-The `@conduit-harness` packages on npm are **not yet published**. The install command below will fail until the initial release lands. To try Conduit today, clone the repo and run `pnpm install` from the root.
-:::
-
 The core package provides the `conduit` CLI, the workflow parser, the orchestration loop, and the `IssueTracker` and `AgentRunner` interfaces that plugins implement.
 
 ## Install

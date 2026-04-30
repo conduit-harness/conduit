@@ -69,11 +69,101 @@ jobs:
       - name: Verify package contents
         run: pnpm -r --filter "./packages/*" exec npm pack --dry-run
 
-      - name: Publish packages to npm
+      - name: Publish @conduit-harness/conduit
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
-        run: pnpm -r --filter "./packages/*" publish --access public --no-git-checks
+        run: |
+          cd packages/conduit
+          output=$(npm publish --access public 2>&1); code=$?; echo "$output"
+          if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
+            echo "Already published, skipping"; exit 0
+          fi
+          exit $code
+
+      - name: Publish @conduit-harness/conduit-tracker-github
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+        run: |
+          cd packages/conduit-tracker-github
+          output=$(npm publish --access public 2>&1); code=$?; echo "$output"
+          if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
+            echo "Already published, skipping"; exit 0
+          fi
+          exit $code
+
+      - name: Publish @conduit-harness/conduit-tracker-linear
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+        run: |
+          cd packages/conduit-tracker-linear
+          output=$(npm publish --access public 2>&1); code=$?; echo "$output"
+          if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
+            echo "Already published, skipping"; exit 0
+          fi
+          exit $code
+
+      - name: Publish @conduit-harness/conduit-tracker-gitlab
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+        run: |
+          cd packages/conduit-tracker-gitlab
+          output=$(npm publish --access public 2>&1); code=$?; echo "$output"
+          if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
+            echo "Already published, skipping"; exit 0
+          fi
+          exit $code
+
+      - name: Publish @conduit-harness/conduit-tracker-jira
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+        run: |
+          cd packages/conduit-tracker-jira
+          output=$(npm publish --access public 2>&1); code=$?; echo "$output"
+          if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
+            echo "Already published, skipping"; exit 0
+          fi
+          exit $code
+
+      - name: Publish @conduit-harness/conduit-runner-claude-cli
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+        run: |
+          cd packages/conduit-runner-claude-cli
+          output=$(npm publish --access public 2>&1); code=$?; echo "$output"
+          if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
+            echo "Already published, skipping"; exit 0
+          fi
+          exit $code
+
+      - name: Publish @conduit-harness/conduit-runner-codex-cli
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+        run: |
+          cd packages/conduit-runner-codex-cli
+          output=$(npm publish --access public 2>&1); code=$?; echo "$output"
+          if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
+            echo "Already published, skipping"; exit 0
+          fi
+          exit $code
+
+      - name: Publish @conduit-harness/conduit-runner-openai-api
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+        run: |
+          cd packages/conduit-runner-openai-api
+          output=$(npm publish --access public 2>&1); code=$?; echo "$output"
+          if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
+            echo "Already published, skipping"; exit 0
+          fi
+          exit $code
 
       - name: Configure git
         run: |

@@ -4,17 +4,12 @@ description: Run the OpenAI Codex CLI as the coding agent for each issue.
 ---
 
 :::caution[Coming soon]
-This package is not yet published. Only the [Claude CLI runner](/packages/runners/claude-cli/) is available in 0.0.1.
+This package is published on npm but has received limited testing. For production workloads, prefer the [Claude CLI runner](/packages/runners/claude-cli/).
 :::
-
 
 `@conduit-harness/conduit-runner-codex-cli` invokes the `codex` (OpenAI Codex CLI) as a subprocess inside the issue's worktree.
 
 ## Install
-
-:::caution
-The `@conduit-harness` packages on npm are **not yet published**. The install command below will fail until the initial release lands.
-:::
 
 ```bash
 npm install -g @conduit-harness/conduit-runner-codex-cli
