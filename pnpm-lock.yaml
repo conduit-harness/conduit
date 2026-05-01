@@ -33,6 +33,18 @@ importers:
         specifier: latest
         version: 4.1.5(@types/node@25.6.0)(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.7)(tsx@4.21.0)(yaml@2.8.3))
 
+  packages/conduit-runner-aider:
+    devDependencies:
+      '@conduit-harness/conduit':
+        specifier: workspace:*
+        version: link:../conduit
+      '@types/node':
+        specifier: latest
+        version: 25.6.0
+      typescript:
+        specifier: latest
+        version: 6.0.3
+
   packages/conduit-runner-claude-cli:
     devDependencies:
       '@conduit-harness/conduit':
