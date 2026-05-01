@@ -9,9 +9,9 @@
       <h3>1. Pick a tracker</h3>
       <div class="choices" role="radiogroup" aria-label="Tracker">
         <label><input type="radio" name="tracker" value="github" checked /> <span>GitHub Issues</span></label>
-        <label class="coming-soon"><input type="radio" name="tracker" value="linear" disabled /> <span>Linear <em>(coming soon)</em></span></label>
-        <label class="coming-soon"><input type="radio" name="tracker" value="jira" disabled /> <span>Jira <em>(coming soon)</em></span></label>
-        <label class="coming-soon"><input type="radio" name="tracker" value="gitlab" disabled /> <span>GitLab <em>(coming soon)</em></span></label>
+        <label><input type="radio" name="tracker" value="linear" /> <span>Linear</span></label>
+        <label><input type="radio" name="tracker" value="jira" /> <span>Jira</span></label>
+        <label><input type="radio" name="tracker" value="gitlab" /> <span>GitLab</span></label>
       </div>
       <div class="tracker-fields">
         <div data-tracker-field="github">
@@ -44,8 +44,9 @@
       <h3>2. Pick a runner</h3>
       <div class="choices" role="radiogroup" aria-label="Runner">
         <label><input type="radio" name="runner" value="claude-cli" checked /> <span>Claude Code CLI</span></label>
-        <label class="coming-soon"><input type="radio" name="runner" value="codex-cli" disabled /> <span>OpenAI Codex CLI <em>(coming soon)</em></span></label>
-        <label class="coming-soon"><input type="radio" name="runner" value="openai-api" disabled /> <span>OpenAI-compatible API <em>(coming soon)</em></span></label>
+        <label><input type="radio" name="runner" value="claude-api" /> <span>Claude API</span></label>
+        <label><input type="radio" name="runner" value="codex-cli" /> <span>OpenAI Codex CLI</span></label>
+        <label><input type="radio" name="runner" value="openai-api" /> <span>OpenAI-compatible API</span></label>
       </div>
       <div class="runner-fields">
         <div data-runner-field="claude-cli">
@@ -75,25 +76,37 @@
     </li>
 
     <li>
-      <h3>3. Install</h3>
+      <h3>3. Pick a workflow template</h3>
+      <div class="choices" role="radiogroup" aria-label="Workflow template">
+        <label><input type="radio" name="template" value="autonomous" checked /> <span>Autonomous</span></label>
+        <label><input type="radio" name="template" value="human-in-the-loop" /> <span>Human-in-the-loop</span></label>
+        <label><input type="radio" name="template" value="reply-draft" /> <span>Customer reply (non-coding)</span></label>
+      </div>
+      <p class="template-hint" data-template-hint="autonomous">Agent runs to completion: comments and transitions the issue through every lifecycle event.</p>
+      <p class="template-hint" data-template-hint="human-in-the-loop" hidden>Agent investigates and prepares the change, then transitions the issue to a review state for a human to take over.</p>
+      <p class="template-hint" data-template-hint="reply-draft" hidden>Agent drafts a reply for a human to review and send. No code changes, no state transitions.</p>
+    </li>
+
+    <li>
+      <h3>4. Install</h3>
       <pre><code data-output="install"></code></pre>
       <button type="button" data-copy="install">Copy</button>
     </li>
 
     <li>
-      <h3>4. <code>.conduit/workflow.md</code></h3>
+      <h3>5. <code>.conduit/workflow.md</code></h3>
       <pre><code data-output="workflow"></code></pre>
       <button type="button" data-copy="workflow">Copy</button>
     </li>
 
     <li>
-      <h3>5. <code>.env</code></h3>
+      <h3>6. <code>.env</code></h3>
       <pre><code data-output="env"></code></pre>
       <button type="button" data-copy="env">Copy</button>
     </li>
 
     <li>
-      <h3>6. Run</h3>
+      <h3>7. Run</h3>
       <pre><code data-output="run"></code></pre>
       <button type="button" data-copy="run">Copy</button>
     </li>
@@ -103,16 +116,19 @@
 <script>
   type TrackerKind = "github" | "linear" | "jira" | "gitlab";
   type RunnerKind = "claude-cli" | "claude-api" | "openai-api" | "codex-cli";
+  type TemplateKind = "autonomous" | "human-in-the-loop" | "reply-draft";
 
   const root = document.querySelector<HTMLElement>("[data-wizard]");
   if (root) {
     const state: {
       tracker: TrackerKind;
       runner: RunnerKind;
+      template: TemplateKind;
       inputs: Record<string, string>;
     } = {
       tracker: "github",
       runner: "claude-cli",
+      template: "autonomous",
       inputs: {},
     };
 
@@ -142,6 +158,18 @@
         el.addEventListener("change", () => {
           if (el.checked) {
             state.runner = el.value as RunnerKind;
+            toggleFields();
+            render();
+          }
+        });
+      });
+
+    root
+      .querySelectorAll<HTMLInputElement>('input[name="template"]')
+      .forEach((el) => {
+        el.addEventListener("change", () => {
+          if (el.checked) {
+            state.template = el.value as TemplateKind;
             toggleFields();
             render();
           }
@@ -179,6 +207,11 @@
         .forEach((el) => {
           el.hidden = el.dataset.runnerField !== state.runner;
         });
+      root!
+        .querySelectorAll<HTMLElement>("[data-template-hint]")
+        .forEach((el) => {
+          el.hidden = el.dataset.templateHint !== state.template;
+        });
     }
 
     function trackerPackage(t: TrackerKind) {
@@ -201,8 +234,65 @@
       return `npm install -g \\\n  ${pkgs.join(" \\\n  ")}`;
     }
 
+    function requiredLabel(): string {
+      return state.template === "reply-draft" ? "needs-reply" : "agentic";
+    }
+
+    function writesYaml(): string[] {
+      const t = state.tracker;
+      const tpl = state.template;
+
+      // GitHub and GitLab have no useful in-flight transitions (states are
+      // just open/closed), so we stick to comments for every event and never
+      // auto-close on success.
+      const transitions =
+        t === "github" || t === "gitlab"
+          ? null
+          : t === "linear"
+            ? {
+                start: "In Progress",
+                success: tpl === "human-in-the-loop" ? "In Review" : "Done",
+                failure: "Todo",
+                terminal: "Blocked",
+              }
+            : {
+                // jira
+                start: "In Progress",
+                success: tpl === "human-in-the-loop" ? "In Review" : "Done",
+                failure: "To Do",
+                terminal: "Blocked",
+              };
+
+      if (tpl === "reply-draft") {
+        return [
+          "  writes:",
+          "    enabled: true",
+          "    on_success:",
+          "      comment: true",
+        ];
+      }
+
+      const lines = ["  writes:", "    enabled: true"];
+      const event = (
+        name: string,
+        transitionTo: string | null | undefined,
+      ) => {
+        lines.push(`    ${name}:`);
+        lines.push("      comment: true");
+        if (transitionTo) lines.push(`      transition_to: ${transitionTo}`);
+      };
+      event("on_start", transitions?.start);
+      event("on_success", transitions?.success);
+      event("on_failure", transitions?.failure);
+      // Terminal failure is the "we've given up" event — only HITL/autonomous
+      // care, and for trackers without transitions we still want a comment.
+      event("on_terminal_failure", transitions?.terminal);
+      return lines;
+    }
+
     function trackerYaml(): string {
       const t = state.tracker;
+      const label = requiredLabel();
       if (t === "github") {
         return [
           "tracker:",
@@ -210,10 +300,9 @@
           "  api_key: $GITHUB_TOKEN",
           `  repo: ${state.inputs["github.repo"] || "owner/name"}`,
           "  active_states: [open]",
-          "  required_labels: [agentic]",
+          `  required_labels: [${label}]`,
           "  excluded_labels: [blocked]",
-          "  writes:",
-          "    enabled: false",
+          ...writesYaml(),
         ].join("\n");
       }
       if (t === "linear") {
@@ -223,10 +312,9 @@
           "  api_key: $LINEAR_API_KEY",
           `  team_key: ${state.inputs["linear.team_key"] || "ENG"}`,
           "  active_states: [Todo, Ready]",
-          "  required_labels: [agentic]",
+          `  required_labels: [${label}]`,
           "  excluded_labels: [blocked]",
-          "  writes:",
-          "    enabled: false",
+          ...writesYaml(),
         ].join("\n");
       }
       if (t === "jira") {
@@ -238,10 +326,9 @@
           `  base_url: ${state.inputs["jira.base_url"] || "https://your-org.atlassian.net"}`,
           `  project_key: ${state.inputs["jira.project_key"] || "PROJ"}`,
           "  active_states: [To Do, In Progress]",
-          "  required_labels: [agentic]",
+          `  required_labels: [${label}]`,
           "  excluded_labels: [blocked]",
-          "  writes:",
-          "    enabled: false",
+          ...writesYaml(),
         ].join("\n");
       }
       // gitlab
@@ -251,10 +338,9 @@
         "  api_key: $GITLAB_TOKEN",
         `  project_id: ${state.inputs["gitlab.project_id"] || "12345"}`,
         "  active_states: [opened]",
-        "  required_labels: [agentic]",
+        `  required_labels: [${label}]`,
         "  excluded_labels: [blocked]",
-        "  writes:",
-        "    enabled: false",
+        ...writesYaml(),
       ].join("\n");
     }
 
@@ -277,6 +363,7 @@
           "openai-api:",
           `  model: ${state.inputs["claude-api.model"] || "claude-sonnet-4-6"}`,
           "  base_url: https://api.anthropic.com/v1",
+          "  token: $ANTHROPIC_API_KEY",
         ].join("\n");
       }
       if (r === "openai-api") {
@@ -287,6 +374,7 @@
           "openai-api:",
           `  model: ${state.inputs["openai-api.model"] || "gpt-4o"}`,
           `  base_url: ${state.inputs["openai-api.base_url"] || "https://api.openai.com/v1"}`,
+          "  token: $OPENAI_API_KEY",
         ].join("\n");
       }
       // codex-cli
@@ -308,8 +396,53 @@
       }[t];
     }
 
-    function buildWorkflow(): string {
+    function promptBody(): string[] {
       const noun = trackerNoun(state.tracker);
+      const tpl = state.template;
+      const header = [
+        `Issue: {{issue.identifier}} - {{issue.title}}`,
+        "URL: {{issue.url}}",
+        "State: {{issue.state}}",
+        "Labels: {{issue.labels}}",
+        "Attempt: {{attempt.number}}",
+        "",
+        "Description:",
+        "{{issue.description}}",
+      ];
+      if (tpl === "autonomous") {
+        return [
+          `Implement the ${noun} issue below in this repository.`,
+          "",
+          ...header,
+          "Workspace: {{workspace.path}}",
+          "",
+          "Make the smallest safe change, run relevant tests, and post a short summary of what you did.",
+        ];
+      }
+      if (tpl === "human-in-the-loop") {
+        return [
+          `Investigate the ${noun} issue below and prepare a change for human review.`,
+          "",
+          ...header,
+          "Workspace: {{workspace.path}}",
+          "",
+          "Implement the change in the workspace and run relevant tests, but do not merge or close the issue.",
+          "When you are done, write a short review note to {{workspace.path}}/REVIEW.md describing what you changed, what you tested, and any open questions.",
+          "Stop after the review note — a human will take it from here.",
+        ];
+      }
+      // reply-draft (non-coding)
+      return [
+        `Read the ${noun} issue below and draft a friendly, accurate reply for the reporter.`,
+        "",
+        ...header,
+        "",
+        "Do not modify any code. Do not transition the issue.",
+        "Output the draft reply as your final message — Conduit will post it as a comment for a human to review and send.",
+      ];
+    }
+
+    function buildWorkflow(): string {
       return [
         "---",
         trackerYaml(),
@@ -319,19 +452,7 @@
         "  base_ref: main",
         runnerYaml(),
         "---",
-        `Implement the ${noun} issue below in this repository.`,
-        "",
-        "Issue: {{issue.identifier}} - {{issue.title}}",
-        "URL: {{issue.url}}",
-        "State: {{issue.state}}",
-        "Labels: {{issue.labels}}",
-        "Workspace: {{workspace.path}}",
-        "Attempt: {{attempt.number}}",
-        "",
-        "Description:",
-        "{{issue.description}}",
-        "",
-        "Please make the smallest safe change, run relevant tests, and summarize the result.",
+        ...promptBody(),
       ].join("\n");
     }
 
@@ -346,7 +467,7 @@
       if (state.tracker === "gitlab") lines.push("GITLAB_TOKEN=glpat-...");
 
       if (state.runner === "claude-api")
-        lines.push("OPENAI_API_KEY=sk-ant-...");
+        lines.push("ANTHROPIC_API_KEY=sk-ant-...");
       else if (state.runner === "openai-api")
         lines.push("OPENAI_API_KEY=sk-...");
       // claude-cli and codex-cli authenticate via their own CLI tools.
@@ -449,6 +570,11 @@
   .wizard pre {
     margin: 0.5rem 0;
   }
+  .template-hint {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--sl-color-gray-2);
+  }
   .wizard button[data-copy] {
     padding: 0.35rem 0.75rem;
     border: 1px solid var(--sl-color-gray-5);
@@ -460,14 +586,5 @@
   }
   .wizard button[data-copy]:hover {
     border-color: var(--sl-color-accent);
-  }
-  .choices label.coming-soon {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
-  .choices label.coming-soon em {
-    font-style: normal;
-    font-size: 0.8em;
-    color: var(--sl-color-gray-3);
   }
 </style>
