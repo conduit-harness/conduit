@@ -5,7 +5,13 @@ description: Pick a tracker and a runner — get a personalized install command,
 
 import SetupWizard from "../../../components/SetupWizard.astro";
 
-Choose your tracker and your runner. The wizard generates the install command, a `.conduit/workflow.md` template, the matching `.env`, and the commands to run — all customized for your selection. Edit the inline fields (repo, team key, model, etc.) and the snippets update live.
+Choose your tracker, your runner, and a workflow template. The wizard generates the install command, a `.conduit/workflow.md` template, the matching `.env`, and the commands to run — all customized for your selection. Edit the inline fields (repo, team key, model, etc.) and the snippets update live.
+
+The three workflow templates cover the common ways teams use Conduit:
+
+- **Autonomous** — the agent runs to completion, posts comments, and transitions the issue through every lifecycle event.
+- **Human-in-the-loop** — the agent investigates and prepares the change, then transitions the issue to a review state for a human to take over.
+- **Customer reply (non-coding)** — the agent drafts a reply for a human to review and send. No code changes, no transitions.
 
 <SetupWizard />
 
@@ -14,3 +20,9 @@ Choose your tracker and your runner. The wizard generates the install command, a
 - [Quickstart](/guides/quickstart/) — full walkthrough of a Linear + OpenAI setup.
 - [Configuration](/guides/configuration/) — workspace and state paths, secrets, plugins.
 - [Tracker writes](/reference/tracker-writes/) — enable comments and state transitions when you're ready.
+
+Reference workflow files matching the three templates above:
+
+- [`autonomous-github-claude-cli.md`](https://github.com/conduit-harness/conduit/blob/main/packages/conduit/examples/workflows/autonomous-github-claude-cli.md)
+- [`human-in-the-loop-linear-claude-cli.md`](https://github.com/conduit-harness/conduit/blob/main/packages/conduit/examples/workflows/human-in-the-loop-linear-claude-cli.md)
+- [`customer-reply-jira-claude-cli.md`](https://github.com/conduit-harness/conduit/blob/main/packages/conduit/examples/workflows/customer-reply-jira-claude-cli.md)
