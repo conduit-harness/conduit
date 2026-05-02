@@ -1,0 +1,23 @@
+{
+  "name": "@conduit-harness/conduit-runner-aider",
+  "version": "0.0.1",
+  "description": "Conduit agent runner plugin for Aider (open-source agentic CLI, works with Ollama)",
+  "type": "module",
+  "exports": {
+    ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "publishConfig": { "access": "public" },
+  "repository": { "type": "git", "url": "git+https://github.com/conduit-harness/conduit.git" },
+  "engines": { "node": ">=24.0.0" },
+  "peerDependencies": { "@conduit-harness/conduit": ">=0.0.1" },
+  "devDependencies": {
+    "@conduit-harness/conduit": "workspace:*",
+    "@types/node": "latest",
+    "typescript": "latest"
+  }
+}
