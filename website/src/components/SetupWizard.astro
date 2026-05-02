@@ -44,6 +44,7 @@
       <h3>2. Pick a runner</h3>
       <div class="choices" role="radiogroup" aria-label="Runner">
         <label><input type="radio" name="runner" value="claude-cli" checked /> <span>Claude Code CLI</span></label>
+        <label><input type="radio" name="runner" value="aider" /> <span>Aider (Ollama, self-hosted)</span></label>
         <label class="coming-soon"><input type="radio" name="runner" value="codex-cli" disabled /> <span>OpenAI Codex CLI <em>(coming soon)</em></span></label>
         <label class="coming-soon"><input type="radio" name="runner" value="openai-api" disabled /> <span>OpenAI-compatible API <em>(coming soon)</em></span></label>
       </div>
@@ -69,6 +70,48 @@
         <div data-runner-field="codex-cli" hidden>
           <label>Model
             <input type="text" data-input="codex-cli.model" value="gpt-5" />
+          </label>
+        </div>
+        <div data-runner-field="aider" hidden>
+          <label>Model
+            <input type="text" data-input="aider.model" value="ollama_chat/qwen2.5-coder:14b" />
+          </label>
+          <label>Ollama endpoint
+            <input type="text" data-input="aider.ollama_endpoint" value="http://localhost:11434" />
+          </label>
+        </div>
+      </div>
+
+      <div class="hardware" data-hardware-section hidden>
+        <h4>Hardware</h4>
+        <div class="choices" role="radiogroup" aria-label="Inference mode">
+          <label><input type="radio" name="inference_mode" value="cpu" checked /> <span>CPU</span></label>
+          <label><input type="radio" name="inference_mode" value="gpu" /> <span>GPU</span></label>
+        </div>
+        <div class="hardware-fields">
+          <label>CPU vendor
+            <select data-input="hardware.cpu_vendor">
+              <option value="intel">Intel</option>
+              <option value="amd">AMD</option>
+              <option value="qualcomm">Qualcomm</option>
+              <option value="apple">Apple</option>
+            </select>
+          </label>
+          <label data-gpu-only hidden>GPU vendor
+            <select data-input="hardware.gpu_vendor">
+              <option value="nvidia">NVIDIA</option>
+              <option value="amd">AMD</option>
+              <option value="intel">Intel</option>
+            </select>
+          </label>
+          <label data-gpu-only hidden>GPU series
+            <select data-input="hardware.gpu_series" data-gpu-series>
+              <option value="rtx3xxx">RTX 3xxx</option>
+              <option value="gtx9xx">GTX 9xx</option>
+            </select>
+          </label>
+          <label data-gpu-only hidden>VRAM (GB): <output data-vram-display>16</output>
+            <input type="range" min="1" max="96" step="1" value="16" data-input="hardware.vram_gb" data-vram-input />
           </label>
         </div>
       </div>
@@ -102,25 +145,65 @@
 
 <script>
   type TrackerKind = "github" | "linear" | "jira" | "gitlab";
-  type RunnerKind = "claude-cli" | "claude-api" | "openai-api" | "codex-cli";
+  type RunnerKind = "claude-cli" | "claude-api" | "openai-api" | "codex-cli" | "aider";
+  type InferenceMode = "cpu" | "gpu";
+  type GpuVendor = "nvidia" | "amd" | "intel";
+
+  const SERIES_BY_VENDOR: Record<GpuVendor, Array<{ value: string; label: string }>> = {
+    nvidia: [
+      { value: "rtx3xxx", label: "RTX 3xxx" },
+      { value: "gtx9xx", label: "GTX 9xx" },
+    ],
+    amd: [
+      { value: "rx7xxx", label: "RX 7xxx" },
+      { value: "rx6xxx", label: "RX 6xxx" },
+    ],
+    intel: [{ value: "intel-xxx", label: "Intel xxx" }],
+  };
 
   const root = document.querySelector<HTMLElement>("[data-wizard]");
   if (root) {
     const state: {
       tracker: TrackerKind;
       runner: RunnerKind;
+      inferenceMode: InferenceMode;
       inputs: Record<string, string>;
     } = {
       tracker: "github",
       runner: "claude-cli",
+      inferenceMode: "cpu",
       inputs: {},
     };
 
-    root.querySelectorAll<HTMLInputElement>("[data-input]").forEach((el) => {
+    root.querySelectorAll<HTMLInputElement | HTMLSelectElement>("[data-input]").forEach((el) => {
       state.inputs[el.dataset.input!] = el.value;
       el.addEventListener("input", () => {
         state.inputs[el.dataset.input!] = el.value;
         render();
+      });
+      el.addEventListener("change", () => {
+        state.inputs[el.dataset.input!] = el.value;
+        if (el.dataset.input === "hardware.gpu_vendor") repopulateSeries();
+        render();
+      });
+    });
+
+    const vramInput = root.querySelector<HTMLInputElement>("[data-vram-input]");
+    const vramDisplay = root.querySelector<HTMLElement>("[data-vram-display]");
+    if (vramInput && vramDisplay) {
+      vramDisplay.textContent = vramInput.value;
+      vramInput.addEventListener("input", () => {
+        vramDisplay.textContent = vramInput.value;
+      });
+    }
+
+    root.querySelectorAll<HTMLInputElement>('input[name="inference_mode"]').forEach((el) => {
+      el.addEventListener("change", () => {
+        if (el.checked) {
+          state.inferenceMode = el.value as InferenceMode;
+          toggleHardwareFields();
+          render();
+        }
       });
     });
 
@@ -179,6 +262,30 @@
         .forEach((el) => {
           el.hidden = el.dataset.runnerField !== state.runner;
         });
+      const hardwareSection = root!.querySelector<HTMLElement>("[data-hardware-section]");
+      if (hardwareSection) hardwareSection.hidden = state.runner !== "aider";
+      toggleHardwareFields();
+    }
+
+    function toggleHardwareFields() {
+      root!.querySelectorAll<HTMLElement>("[data-gpu-only]").forEach((el) => {
+        el.hidden = state.inferenceMode !== "gpu";
+      });
+    }
+
+    function repopulateSeries() {
+      const select = root!.querySelector<HTMLSelectElement>("[data-gpu-series]");
+      if (!select) return;
+      const vendor = (state.inputs["hardware.gpu_vendor"] as GpuVendor) || "nvidia";
+      const options = SERIES_BY_VENDOR[vendor] ?? [];
+      select.innerHTML = "";
+      for (const opt of options) {
+        const o = document.createElement("option");
+        o.value = opt.value;
+        o.textContent = opt.label;
+        select.appendChild(o);
+      }
+      state.inputs["hardware.gpu_series"] = select.value;
     }
 
     function trackerPackage(t: TrackerKind) {
@@ -289,14 +396,47 @@
           `  base_url: ${state.inputs["openai-api.base_url"] || "https://api.openai.com/v1"}`,
         ].join("\n");
       }
-      // codex-cli
+      if (r === "codex-cli") {
+        return [
+          "agent:",
+          "  kind: codex-cli",
+          "  max_concurrent_agents: 1",
+          "codex-cli:",
+          `  model: ${state.inputs["codex-cli.model"] || "gpt-5"}`,
+        ].join("\n");
+      }
+      // aider
+      const userModel = state.inputs["aider.model"];
+      const model = userModel && userModel.length > 0 ? userModel : recommendedAiderModel();
       return [
         "agent:",
-        "  kind: codex-cli",
+        "  kind: aider",
         "  max_concurrent_agents: 1",
-        "codex-cli:",
-        `  model: ${state.inputs["codex-cli.model"] || "gpt-5"}`,
+        "aider:",
+        `  model: ${model}`,
+        `  ollama_endpoint: ${state.inputs["aider.ollama_endpoint"] || "http://localhost:11434"}`,
       ].join("\n");
+    }
+
+    function recommendedAiderModel(): string {
+      const vram = Number.parseInt(state.inputs["hardware.vram_gb"] ?? "16", 10);
+      if (state.inferenceMode !== "gpu" || !Number.isFinite(vram)) return "ollama_chat/qwen2.5-coder:7b";
+      if (vram >= 24) return "ollama_chat/qwen2.5-coder:32b";
+      if (vram >= 8) return "ollama_chat/qwen2.5-coder:14b";
+      return "ollama_chat/qwen2.5-coder:7b";
+    }
+
+    function hardwareComment(): string | undefined {
+      if (state.runner !== "aider") return undefined;
+      const lines: string[] = ["# hardware:"];
+      lines.push(`#   inference: ${state.inferenceMode}`);
+      lines.push(`#   cpu_vendor: ${state.inputs["hardware.cpu_vendor"] || "intel"}`);
+      if (state.inferenceMode === "gpu") {
+        lines.push(`#   gpu_vendor: ${state.inputs["hardware.gpu_vendor"] || "nvidia"}`);
+        lines.push(`#   gpu_series: ${state.inputs["hardware.gpu_series"] || "rtx3xxx"}`);
+        lines.push(`#   vram_gb: ${state.inputs["hardware.vram_gb"] || "16"}`);
+      }
+      return lines.join("\n");
     }
 
     function trackerNoun(t: TrackerKind) {
@@ -310,6 +450,7 @@
 
     function buildWorkflow(): string {
       const noun = trackerNoun(state.tracker);
+      const hardware = hardwareComment();
       return [
         "---",
         trackerYaml(),
@@ -318,6 +459,7 @@
         "  strategy: git-worktree",
         "  base_ref: main",
         runnerYaml(),
+        ...(hardware ? [hardware] : []),
         "---",
         `Implement the ${noun} issue below in this repository.`,
         "",
@@ -374,6 +516,7 @@
       }
     }
 
+    repopulateSeries();
     toggleFields();
     render();
   }
@@ -469,5 +612,41 @@
     font-style: normal;
     font-size: 0.8em;
     color: var(--sl-color-gray-3);
+  }
+  .hardware {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--sl-color-gray-5);
+  }
+  .hardware h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.95rem;
+  }
+  .hardware-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+  }
+  .hardware-fields label {
+    display: grid;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+    color: var(--sl-color-gray-2);
+  }
+  .hardware-fields select {
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.35rem;
+    background: var(--sl-color-bg);
+    color: var(--sl-color-white);
+    font-family: var(--sl-font-mono);
+    font-size: 0.85rem;
+  }
+  .hardware-fields input[type="range"] {
+    width: 100%;
+  }
+  .hardware-fields output[data-vram-display] {
+    font-family: var(--sl-font-mono);
+    color: var(--sl-color-accent-high);
   }
 </style>
