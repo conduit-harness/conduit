@@ -97,6 +97,9 @@
               <option value="apple">Apple</option>
             </select>
           </label>
+          <label>CPU series
+            <select data-input="hardware.cpu_series" data-cpu-series></select>
+          </label>
           <label data-gpu-only hidden>GPU vendor
             <select data-input="hardware.gpu_vendor">
               <option value="nvidia">NVIDIA</option>
@@ -105,13 +108,10 @@
             </select>
           </label>
           <label data-gpu-only hidden>GPU series
-            <select data-input="hardware.gpu_series" data-gpu-series>
-              <option value="rtx3xxx">RTX 3xxx</option>
-              <option value="gtx9xx">GTX 9xx</option>
-            </select>
+            <select data-input="hardware.gpu_series" data-gpu-series></select>
           </label>
-          <label data-gpu-only hidden>VRAM (GB): <output data-vram-display>16</output>
-            <input type="range" min="1" max="96" step="1" value="16" data-input="hardware.vram_gb" data-vram-input />
+          <label>RAM (GB): <output data-ram-display>16</output>
+            <input type="range" min="1" max="96" step="1" value="16" data-input="hardware.ram_gb" data-ram-input />
           </label>
         </div>
       </div>
@@ -147,18 +147,47 @@
   type TrackerKind = "github" | "linear" | "jira" | "gitlab";
   type RunnerKind = "claude-cli" | "claude-api" | "openai-api" | "codex-cli" | "aider";
   type InferenceMode = "cpu" | "gpu";
+  type CpuVendor = "intel" | "amd" | "qualcomm" | "apple";
   type GpuVendor = "nvidia" | "amd" | "intel";
 
-  const SERIES_BY_VENDOR: Record<GpuVendor, Array<{ value: string; label: string }>> = {
-    nvidia: [
-      { value: "rtx3xxx", label: "RTX 3xxx" },
-      { value: "gtx9xx", label: "GTX 9xx" },
+  const CPU_SERIES_BY_VENDOR: Record<CpuVendor, Array<{ value: string; label: string }>> = {
+    intel: [
+      { value: "core-ultra-s2", label: "Core Ultra (Series 2)" },
+      { value: "core-ultra-s1", label: "Core Ultra (Series 1)" },
+      { value: "core-14th", label: "Core 14th Gen" },
     ],
     amd: [
-      { value: "rx7xxx", label: "RX 7xxx" },
-      { value: "rx6xxx", label: "RX 6xxx" },
+      { value: "ryzen-9000", label: "Ryzen 9000" },
+      { value: "ryzen-ai-300", label: "Ryzen AI 300" },
+      { value: "ryzen-7000", label: "Ryzen 7000" },
     ],
-    intel: [{ value: "intel-xxx", label: "Intel xxx" }],
+    qualcomm: [
+      { value: "snapdragon-x2-elite", label: "Snapdragon X2 Elite" },
+      { value: "snapdragon-x-elite", label: "Snapdragon X Elite" },
+      { value: "snapdragon-x-plus", label: "Snapdragon X Plus" },
+    ],
+    apple: [
+      { value: "m4", label: "M4" },
+      { value: "m3", label: "M3" },
+      { value: "m2", label: "M2" },
+    ],
+  };
+
+  // Discrete GPUs only — iGPUs intentionally excluded.
+  const GPU_SERIES_BY_VENDOR: Record<GpuVendor, Array<{ value: string; label: string }>> = {
+    nvidia: [
+      { value: "rtx5xxx", label: "RTX 50xx" },
+      { value: "rtx4xxx", label: "RTX 40xx" },
+      { value: "rtx3xxx", label: "RTX 30xx" },
+    ],
+    amd: [
+      { value: "rx9xxx", label: "RX 9xxx" },
+      { value: "rx7xxx", label: "RX 7xxx" },
+    ],
+    intel: [
+      { value: "arc-b", label: "Arc B-series" },
+      { value: "arc-a", label: "Arc A-series" },
+    ],
   };
 
   const root = document.querySelector<HTMLElement>("[data-wizard]");
@@ -183,17 +212,18 @@
       });
       el.addEventListener("change", () => {
         state.inputs[el.dataset.input!] = el.value;
-        if (el.dataset.input === "hardware.gpu_vendor") repopulateSeries();
+        if (el.dataset.input === "hardware.gpu_vendor") repopulateGpuSeries();
+        if (el.dataset.input === "hardware.cpu_vendor") repopulateCpuSeries();
         render();
       });
     });
 
-    const vramInput = root.querySelector<HTMLInputElement>("[data-vram-input]");
-    const vramDisplay = root.querySelector<HTMLElement>("[data-vram-display]");
-    if (vramInput && vramDisplay) {
-      vramDisplay.textContent = vramInput.value;
-      vramInput.addEventListener("input", () => {
-        vramDisplay.textContent = vramInput.value;
+    const ramInput = root.querySelector<HTMLInputElement>("[data-ram-input]");
+    const ramDisplay = root.querySelector<HTMLElement>("[data-ram-display]");
+    if (ramInput && ramDisplay) {
+      ramDisplay.textContent = ramInput.value;
+      ramInput.addEventListener("input", () => {
+        ramDisplay.textContent = ramInput.value;
       });
     }
 
@@ -273,11 +303,11 @@
       });
     }
 
-    function repopulateSeries() {
+    function repopulateGpuSeries() {
       const select = root!.querySelector<HTMLSelectElement>("[data-gpu-series]");
       if (!select) return;
       const vendor = (state.inputs["hardware.gpu_vendor"] as GpuVendor) || "nvidia";
-      const options = SERIES_BY_VENDOR[vendor] ?? [];
+      const options = GPU_SERIES_BY_VENDOR[vendor] ?? [];
       select.innerHTML = "";
       for (const opt of options) {
         const o = document.createElement("option");
@@ -286,6 +316,21 @@
         select.appendChild(o);
       }
       state.inputs["hardware.gpu_series"] = select.value;
+    }
+
+    function repopulateCpuSeries() {
+      const select = root!.querySelector<HTMLSelectElement>("[data-cpu-series]");
+      if (!select) return;
+      const vendor = (state.inputs["hardware.cpu_vendor"] as CpuVendor) || "intel";
+      const options = CPU_SERIES_BY_VENDOR[vendor] ?? [];
+      select.innerHTML = "";
+      for (const opt of options) {
+        const o = document.createElement("option");
+        o.value = opt.value;
+        o.textContent = opt.label;
+        select.appendChild(o);
+      }
+      state.inputs["hardware.cpu_series"] = select.value;
     }
 
     function trackerPackage(t: TrackerKind) {
@@ -419,10 +464,15 @@
     }
 
     function recommendedAiderModel(): string {
-      const vram = Number.parseInt(state.inputs["hardware.vram_gb"] ?? "16", 10);
-      if (state.inferenceMode !== "gpu" || !Number.isFinite(vram)) return "ollama_chat/qwen2.5-coder:7b";
-      if (vram >= 24) return "ollama_chat/qwen2.5-coder:32b";
-      if (vram >= 8) return "ollama_chat/qwen2.5-coder:14b";
+      const ram = Number.parseInt(state.inputs["hardware.ram_gb"] ?? "16", 10);
+      if (!Number.isFinite(ram)) return "ollama_chat/qwen2.5-coder:7b";
+      // CPU inference is much slower; bias toward smaller models even with lots of RAM.
+      if (state.inferenceMode === "cpu") {
+        if (ram >= 32) return "ollama_chat/qwen2.5-coder:14b";
+        return "ollama_chat/qwen2.5-coder:7b";
+      }
+      if (ram >= 24) return "ollama_chat/qwen2.5-coder:32b";
+      if (ram >= 8) return "ollama_chat/qwen2.5-coder:14b";
       return "ollama_chat/qwen2.5-coder:7b";
     }
 
@@ -431,11 +481,12 @@
       const lines: string[] = ["# hardware:"];
       lines.push(`#   inference: ${state.inferenceMode}`);
       lines.push(`#   cpu_vendor: ${state.inputs["hardware.cpu_vendor"] || "intel"}`);
+      lines.push(`#   cpu_series: ${state.inputs["hardware.cpu_series"] || ""}`);
       if (state.inferenceMode === "gpu") {
         lines.push(`#   gpu_vendor: ${state.inputs["hardware.gpu_vendor"] || "nvidia"}`);
-        lines.push(`#   gpu_series: ${state.inputs["hardware.gpu_series"] || "rtx3xxx"}`);
-        lines.push(`#   vram_gb: ${state.inputs["hardware.vram_gb"] || "16"}`);
+        lines.push(`#   gpu_series: ${state.inputs["hardware.gpu_series"] || ""}`);
       }
+      lines.push(`#   ram_gb: ${state.inputs["hardware.ram_gb"] || "16"}`);
       return lines.join("\n");
     }
 
@@ -516,7 +567,8 @@
       }
     }
 
-    repopulateSeries();
+    repopulateCpuSeries();
+    repopulateGpuSeries();
     toggleFields();
     render();
   }
@@ -645,7 +697,7 @@
   .hardware-fields input[type="range"] {
     width: 100%;
   }
-  .hardware-fields output[data-vram-display] {
+  .hardware-fields output[data-ram-display] {
     font-family: var(--sl-font-mono);
     color: var(--sl-color-accent-high);
   }
