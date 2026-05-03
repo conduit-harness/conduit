@@ -1,0 +1,63 @@
+name: Issue
+description: Bug, feature request, plugin idea, or general issue.
+title: "<Domain>: <short description>"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for opening an issue. Please prefix the title with the domain you picked below — for example: `Runner: aider: --message-file path leaks to stdout` or `Core: workflow.md frontmatter parser drops empty values`.
+
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      description: Which part of the project is this about? Use this value as the title prefix.
+      options:
+        - Core
+        - "Runner: claude-cli"
+        - "Runner: codex-cli"
+        - "Runner: aider"
+        - "Runner: openai-api"
+        - "Runner: new plugin"
+        - "Tracker: github"
+        - "Tracker: gitlab"
+        - "Tracker: linear"
+        - "Tracker: jira"
+        - "Tracker: new plugin"
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      description: What kind of issue is this?
+      options:
+        - Bug
+        - Feature request
+        - New plugin proposal
+        - Question / discussion
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: For bugs — what's happening, what you expected, repro steps if you have them. For features/plugins — the use case and what you'd like to be able to do.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed approach
+      description: Optional. Rough ideas for a fix, a config snippet, or an implementation sketch.
+
+  - type: textarea
+    id: related
+    attributes:
+      label: Related issues / PRs
+      description: Optional. Links to anything connected.
