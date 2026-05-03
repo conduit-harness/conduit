@@ -1,0 +1,49 @@
+name: Auto-prefix issue title
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  prefix:
+    runs-on: ubuntu-latest
+    if: github.event.issue.user.type != 'Bot'
+    steps:
+      - name: Prefix title with Domain
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}
+          TITLE: ${{ github.event.issue.title }}
+          BODY: ${{ github.event.issue.body }}
+        run: |
+          set -euo pipefail
+
+          # Read the value under "### Domain" produced by the issue form.
+          DOMAIN=$(printf '%s' "$BODY" | awk '
+            $0 == "### Domain" { found = 1; next }
+            found && /^### / { exit }
+            found && NF { print; exit }
+          ')
+
+          if [ -z "$DOMAIN" ] || [ "$DOMAIN" = "_No response_" ]; then
+            echo "no Domain selected — leaving title alone"
+            exit 0
+          fi
+
+          PREFIX="${DOMAIN}:"
+
+          # Idempotent: skip if the title already starts with the prefix.
+          case "$TITLE" in
+            "$PREFIX"*)
+              echo "title already starts with '$PREFIX' — nothing to do"
+              exit 0
+              ;;
+          esac
+
+          NEW_TITLE="${PREFIX} ${TITLE}"
+          echo "rewriting title: $NEW_TITLE"
+          gh issue edit "$NUMBER" --repo "$REPO" --title "$NEW_TITLE"

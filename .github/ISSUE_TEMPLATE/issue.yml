@@ -1,17 +1,17 @@
 name: Issue
 description: Bug, feature request, plugin idea, or general issue.
-title: "<Domain>: <short description>"
+title: "Short description of your issue"
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for opening an issue. Please prefix the title with the domain you picked below — for example: `Runner: aider: --message-file path leaks to stdout` or `Core: workflow.md frontmatter parser drops empty values`.
+        Thanks for opening an issue. Just write a short description in the title — the Domain you pick below will be prepended automatically when the issue is opened (e.g. `Runner: aider: <your title>`).
 
   - type: dropdown
     id: domain
     attributes:
       label: Domain
-      description: Which part of the project is this about? Use this value as the title prefix.
+      description: Which part of the project is this about?
       options:
         - Core
         - "Runner: claude-cli"
