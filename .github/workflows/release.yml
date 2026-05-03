@@ -54,6 +54,20 @@ jobs:
             exit 1
           fi
 
+      - name: Determine npm dist-tag
+        run: |
+          # Pre-release versions (anything with a hyphen — e.g. 0.0.2-rc1)
+          # publish under the "next" dist-tag so `npm install -g <pkg>` keeps
+          # resolving to the previous stable release.
+          if [[ "$VERSION" == *-* ]]; then
+            echo "NPM_TAG=next" >> "$GITHUB_ENV"
+            echo "PRERELEASE=true" >> "$GITHUB_ENV"
+          else
+            echo "NPM_TAG=latest" >> "$GITHUB_ENV"
+            echo "PRERELEASE=false" >> "$GITHUB_ENV"
+          fi
+          echo "Will publish with --tag $(grep '^NPM_TAG=' "$GITHUB_ENV" | tail -1)"
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -79,7 +93,7 @@ jobs:
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit
-          output=$(npm publish --access public 2>&1) && code=0 || code=$?; echo "$output"
+          output=$(npm publish --access public --tag "${NPM_TAG}" 2>&1) && code=0 || code=$?; echo "$output"
           if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
             echo "Already published, skipping"; exit 0
           fi
@@ -95,7 +109,7 @@ jobs:
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-tracker-github
-          output=$(npm publish --access public 2>&1) && code=0 || code=$?; echo "$output"
+          output=$(npm publish --access public --tag "${NPM_TAG}" 2>&1) && code=0 || code=$?; echo "$output"
           if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
             echo "Already published, skipping"; exit 0
           fi
@@ -111,7 +125,7 @@ jobs:
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-tracker-linear
-          output=$(npm publish --access public 2>&1) && code=0 || code=$?; echo "$output"
+          output=$(npm publish --access public --tag "${NPM_TAG}" 2>&1) && code=0 || code=$?; echo "$output"
           if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
             echo "Already published, skipping"; exit 0
           fi
@@ -127,7 +141,7 @@ jobs:
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-tracker-gitlab
-          output=$(npm publish --access public 2>&1) && code=0 || code=$?; echo "$output"
+          output=$(npm publish --access public --tag "${NPM_TAG}" 2>&1) && code=0 || code=$?; echo "$output"
           if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
             echo "Already published, skipping"; exit 0
           fi
@@ -143,7 +157,7 @@ jobs:
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-tracker-jira
-          output=$(npm publish --access public 2>&1) && code=0 || code=$?; echo "$output"
+          output=$(npm publish --access public --tag "${NPM_TAG}" 2>&1) && code=0 || code=$?; echo "$output"
           if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
             echo "Already published, skipping"; exit 0
           fi
@@ -159,7 +173,7 @@ jobs:
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-runner-claude-cli
-          output=$(npm publish --access public 2>&1) && code=0 || code=$?; echo "$output"
+          output=$(npm publish --access public --tag "${NPM_TAG}" 2>&1) && code=0 || code=$?; echo "$output"
           if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
             echo "Already published, skipping"; exit 0
           fi
@@ -175,7 +189,7 @@ jobs:
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-runner-codex-cli
-          output=$(npm publish --access public 2>&1) && code=0 || code=$?; echo "$output"
+          output=$(npm publish --access public --tag "${NPM_TAG}" 2>&1) && code=0 || code=$?; echo "$output"
           if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
             echo "Already published, skipping"; exit 0
           fi
@@ -191,7 +205,7 @@ jobs:
             echo "Already published, skipping"; exit 0
           fi
           cd packages/conduit-runner-openai-api
-          output=$(npm publish --access public 2>&1) && code=0 || code=$?; echo "$output"
+          output=$(npm publish --access public --tag "${NPM_TAG}" 2>&1) && code=0 || code=$?; echo "$output"
           if [ $code -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
             echo "Already published, skipping"; exit 0
           fi
@@ -246,3 +260,4 @@ jobs:
           tag_name: ${{ env.TAG }}
           name: ${{ env.TAG }}
           generate_release_notes: true
+          prerelease: ${{ env.PRERELEASE == 'true' }}

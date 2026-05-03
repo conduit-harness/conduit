@@ -2,13 +2,22 @@
 
 Conduit ships as 8 separate npm packages (1 core + 4 trackers + 3 runners), all versioned in lockstep. A release publishes every package, creates a `v<version>` git tag, and a corresponding GitHub release with auto-generated notes.
 
+## Stable vs pre-release
+
+Versions containing a hyphen (e.g. `0.0.2-rc1`, `1.0.0-beta.3`) are treated as pre-releases by the workflow:
+
+- Each package is published under the npm `next` dist-tag instead of `latest`, so `npm install -g <pkg>` still resolves to the previous stable release. Opt in with `npm install -g <pkg>@next`.
+- The GitHub release is marked as a pre-release.
+
+Stable versions (no hyphen) publish under `latest` and create a non-pre-release GitHub release. The workflow detects which mode based on the version string alone.
+
 ## Steps
 
-1. **Bump versions.** On a PR, update `version` in every `packages/*/package.json` to the new version (e.g. `0.0.1` → `0.0.2`). Match exactly — the workflow refuses to release if any package disagrees.
+1. **Bump versions.** On a PR (or a long-lived release branch), update `version` in every `packages/*/package.json` to the new version (e.g. `0.0.1` → `0.0.2-rc1`). Match exactly — the workflow refuses to release if any package disagrees.
 
-2. **Merge the bump PR to `main`.**
+2. **Merge the bump PR to `main`** (or push the release branch).
 
-3. **Trigger the release.** From the GitHub Actions tab, run the **Release to npm** workflow with the new version as input (e.g. `0.0.2`).
+3. **Trigger the release.** From the GitHub Actions tab, run the **Release to npm** workflow with the new version as input (e.g. `0.0.2-rc1`). For releases off a non-main branch, pick that branch in the "Use workflow from" dropdown.
 
    The workflow will, in order:
 
