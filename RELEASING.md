@@ -24,8 +24,8 @@ Stable versions (no hyphen) publish under `latest` and create a non-pre-release 
    - Verify every `packages/*/package.json` matches the input version.
    - Verify the `v<version>` tag does not already exist.
    - Install, typecheck, test, build.
-   - `npm publish` each package independently. Each step skips cleanly if the version is already published (so the workflow is idempotent and can be re-run if it fails partway).
-   - Poll npm with retries (up to 60s per package) to confirm every package is visible at the new version.
+   - `npm publish` every workspace package (auto-discovered from `packages/*/package.json` — no per-package step to maintain). Each publish skips cleanly if the version is already on npm, so the workflow is idempotent and can be re-run if it fails partway.
+   - Poll npm with retries (up to 60s per package, also iterating over `packages/*`) to confirm every package is visible at the new version. A package added under `packages/` but somehow not published gets caught here.
    - Create and push the `v<version>` tag.
    - Create the GitHub release with auto-generated notes (PRs since the previous tag).
 
