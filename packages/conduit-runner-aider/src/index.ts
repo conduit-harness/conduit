@@ -6,6 +6,7 @@ import type { AgentResult, AgentRunner, RunAttempt, ServiceConfig } from "@condu
 function str(v: unknown, fallback: string): string { return typeof v === "string" && v.length > 0 ? v : fallback; }
 function maybeStr(v: unknown): string | undefined { return typeof v === "string" && v.length > 0 ? v : undefined; }
 function num(v: unknown, fallback: number): number { const n = typeof v === "string" ? Number.parseInt(v, 10) : typeof v === "number" ? v : NaN; return Number.isFinite(n) ? n : fallback; }
+function nativeShell(): [string, string] { return process.platform === "win32" ? ["powershell", "-Command"] : ["bash", "-lc"]; }
 
 export default class AiderRunner implements AgentRunner {
   private readonly command: string;
@@ -53,7 +54,8 @@ export default class AiderRunner implements AgentRunner {
     const env: NodeJS.ProcessEnv = { ...process.env, OLLAMA_API_BASE: this.ollamaEndpoint };
     if (this.apiKey) env.OPENAI_API_KEY = this.apiKey;
     const result = await new Promise<AgentResult>((resolve) => {
-      const child = spawn("bash", ["-lc", fullCommand], { cwd: attempt.workspacePath, env, stdio: ["ignore", "pipe", "pipe"] });
+      const [shell, flag] = nativeShell();
+      const child = spawn(shell, [flag, fullCommand], { cwd: attempt.workspacePath, env, stdio: ["ignore", "pipe", "pipe"] });
       let output = ""; let settled = false; let stallTimer: NodeJS.Timeout | undefined;
       const finish = (r: AgentResult) => { if (settled) return; settled = true; clearTimeout(turnTimer); if (stallTimer) clearTimeout(stallTimer); resolve(r); };
       const bumpStall = () => { if (this.stallTimeoutMs <= 0) return; if (stallTimer) clearTimeout(stallTimer); stallTimer = setTimeout(() => { child.kill("SIGTERM"); finish({ status: "timed_out", output, error: "aider_stall_timeout" }); }, this.stallTimeoutMs); };
@@ -83,6 +85,7 @@ export default class AiderRunner implements AgentRunner {
 }
 
 function shellQuote(value: string): string {
-  if (/^[A-Za-z0-9_./:@-]+$/.test(value)) return value;
+  if (/^[A-Za-z0-9_./:@\\-]+$/.test(value)) return value;
+  if (process.platform === "win32") return `'${value.replace(/'/g, "''")}'`;
   return `'${value.replace(/'/g, "'\\''")}'`;
 }
