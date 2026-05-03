@@ -53,6 +53,7 @@ Trackers and runners are separate npm packages, loaded by `kind`:
 - `agent.kind: openai-api` → `@conduit-harness/conduit-runner-openai-api`
 - `agent.kind: claude-cli` → `@conduit-harness/conduit-runner-claude-cli`
 - `agent.kind: codex-cli` → `@conduit-harness/conduit-runner-codex-cli`
+- `agent.kind: aider` → `@conduit-harness/conduit-runner-aider`
 
 Install only the plugins you need. If a referenced plugin is missing, Conduit prints the install command.
 
