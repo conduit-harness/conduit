@@ -1,6 +1,6 @@
 {
   "name": "@conduit-harness/conduit-runner-openai-api",
-  "version": "0.0.1",
+  "version": "0.0.2-rc1",
   "description": "Conduit agent runner plugin for OpenAI-compatible APIs (OpenAI, Azure, GitHub Models)",
   "type": "module",
   "exports": {
@@ -14,7 +14,7 @@
   "publishConfig": { "access": "public" },
   "repository": { "type": "git", "url": "git+https://github.com/conduit-harness/conduit.git" },
   "engines": { "node": ">=24.0.0" },
-  "peerDependencies": { "@conduit-harness/conduit": ">=0.0.1" },
+  "peerDependencies": { "@conduit-harness/conduit": ">=0.0.2-rc1" },
   "devDependencies": {
     "@conduit-harness/conduit": "workspace:*",
     "@types/node": "latest",
