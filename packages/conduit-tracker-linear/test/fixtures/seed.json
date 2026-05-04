@@ -1,0 +1,15 @@
+{
+  "issues": [
+    { "id": "L1", "identifier": "ENG-1", "title": "First issue",  "description": "Do the thing.", "priority": 2, "url": "https://linear/test/ENG-1", "branchName": "user/eng-1", "createdAt": "2024-01-01T00:00:00Z", "updatedAt": "2024-01-02T00:00:00Z", "state": { "name": "Todo" }, "labels": ["ai"] },
+    { "id": "L2", "identifier": "ENG-2", "title": "Wrong label",  "description": null,            "priority": 3, "url": "https://linear/test/ENG-2", "branchName": null,            "createdAt": "2024-01-03T00:00:00Z", "updatedAt": "2024-01-03T00:00:00Z", "state": { "name": "Todo" }, "labels": ["docs"] },
+    { "id": "L3", "identifier": "ENG-3", "title": "Already done", "description": null,            "priority": 4, "url": "https://linear/test/ENG-3", "branchName": null,            "createdAt": "2024-01-04T00:00:00Z", "updatedAt": "2024-01-04T00:00:00Z", "state": { "name": "Done" }, "labels": ["ai"] }
+  ],
+  "team": {
+    "id": "T1",
+    "states": [
+      { "id": "S1", "name": "Todo" },
+      { "id": "S2", "name": "In Progress" },
+      { "id": "S3", "name": "Done" }
+    ]
+  }
+}

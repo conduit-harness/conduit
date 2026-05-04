@@ -1,0 +1,62 @@
+name: Integration tests (runners)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/conduit-runner-*/**'
+      - 'packages/conduit/**'
+      - 'tools/mock-llm/**'
+      - '.github/workflows/integration-runners.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/conduit-runner-*/**'
+      - 'packages/conduit/**'
+      - 'tools/mock-llm/**'
+      - '.github/workflows/integration-runners.yml'
+
+jobs:
+  runners:
+    name: runner integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.10.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Setup Python (for aider)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build core package
+        run: pnpm --filter @conduit-harness/conduit build
+
+      # The runner suites stub `command` so they don't depend on real LLMs,
+      # but we install the upstream CLIs so the runner packages can also be
+      # smoke-tested against the real binaries (e.g. `<bin> --version`) and
+      # so users running `pnpm test:runners` locally can mirror this CI env.
+      - name: Install runner CLIs
+        run: |
+          npm install -g @anthropic-ai/claude-code || echo "claude-code install skipped"
+          npm install -g @openai/codex || echo "codex install skipped"
+          python -m pip install --upgrade pip
+          pip install aider-chat || echo "aider install skipped"
+
+      - name: Run runner integration tests
+        run: pnpm test:runners

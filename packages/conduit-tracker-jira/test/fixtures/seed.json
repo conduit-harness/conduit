@@ -1,0 +1,43 @@
+{
+  "issues": [
+    {
+      "id": "1001",
+      "key": "TEST-1",
+      "fields": {
+        "summary": "First issue",
+        "description": { "type": "doc", "version": 1, "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Do the thing." }] }] },
+        "status": { "name": "Todo" },
+        "labels": ["ai"],
+        "priority": { "id": "3" },
+        "created": "2024-01-01T00:00:00.000Z",
+        "updated": "2024-01-02T00:00:00.000Z"
+      }
+    },
+    {
+      "id": "1002",
+      "key": "TEST-2",
+      "fields": {
+        "summary": "Wrong label",
+        "description": null,
+        "status": { "name": "Todo" },
+        "labels": ["docs"],
+        "priority": { "id": "3" },
+        "created": "2024-01-03T00:00:00.000Z",
+        "updated": "2024-01-03T00:00:00.000Z"
+      }
+    },
+    {
+      "id": "1003",
+      "key": "TEST-3",
+      "fields": {
+        "summary": "Already done",
+        "description": null,
+        "status": { "name": "Done" },
+        "labels": ["ai"],
+        "priority": { "id": "3" },
+        "created": "2024-01-04T00:00:00.000Z",
+        "updated": "2024-01-04T00:00:00.000Z"
+      }
+    }
+  ]
+}

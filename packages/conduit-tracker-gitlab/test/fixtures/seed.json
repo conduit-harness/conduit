@@ -1,0 +1,8 @@
+{
+  "issues": [
+    { "iid": 11, "title": "First issue",  "description": "Do the thing.", "state": "opened", "web_url": "https://gitlab/example/-/issues/11", "labels": ["ai"],            "created_at": "2024-01-01T00:00:00Z", "updated_at": "2024-01-02T00:00:00Z" },
+    { "iid": 12, "title": "Wrong label",  "description": null,            "state": "opened", "web_url": "https://gitlab/example/-/issues/12", "labels": ["docs"],          "created_at": "2024-01-03T00:00:00Z", "updated_at": "2024-01-03T00:00:00Z" },
+    { "iid": 13, "title": "Blocked",      "description": "blocked",       "state": "opened", "web_url": "https://gitlab/example/-/issues/13", "labels": ["ai", "blocked"], "created_at": "2024-01-04T00:00:00Z", "updated_at": "2024-01-04T00:00:00Z" },
+    { "iid": 14, "title": "Done already", "description": "closed",        "state": "closed", "web_url": "https://gitlab/example/-/issues/14", "labels": ["ai"],            "created_at": "2024-01-05T00:00:00Z", "updated_at": "2024-01-05T00:00:00Z" }
+  ]
+}
