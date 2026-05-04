@@ -1,6 +1,6 @@
 {
   "name": "@conduit-harness/conduit-runner-openai-api",
-  "version": "0.0.1",
+  "version": "0.0.2-rc2",
   "description": "(DEPRECATED) Conduit runner plugin that calls an OpenAI-compatible chat-completions endpoint directly. Does not wrap an agentic harness; prefer @conduit-harness/conduit-runner-claude-cli, conduit-runner-codex-cli, or conduit-runner-aider.",
   "deprecated": "This runner calls a chat-completions endpoint directly with no agentic harness (no agent loop, no tool execution, no context management). It does not conform to Conduit's runner contract. Use conduit-runner-claude-cli, conduit-runner-codex-cli, or conduit-runner-aider instead. See docs/UBIQUITOUS_LANGUAGE.md.",
   "type": "module",
@@ -16,7 +16,7 @@
   "publishConfig": { "access": "public" },
   "repository": { "type": "git", "url": "git+https://github.com/conduit-harness/conduit.git" },
   "engines": { "node": ">=24.0.0" },
-  "peerDependencies": { "@conduit-harness/conduit": ">=0.0.1" },
+  "peerDependencies": { "@conduit-harness/conduit": ">=0.0.2-rc2" },
   "devDependencies": {
     "@conduit-harness/conduit": "workspace:*",
     "@types/node": "latest",
