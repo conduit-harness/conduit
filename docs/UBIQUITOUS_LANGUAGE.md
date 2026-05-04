@@ -87,11 +87,13 @@ client" as a noun in prose.
 Reference: `packages/conduit/src/tracker/tracker.ts:3`
 
 ### Runner
-A plugin that drives a coding agent inside a workspace. The `claude-cli` and
-`codex-cli` runners spawn an external harness (Claude Code, Codex CLI) and
-let it run its own agent loop; the `openai-api` runner talks directly to a
-chat-completions endpoint, so Conduit itself supplies the harness around the
-model. Implements `AgentRunner`. Naming convention:
+A plugin that drives a coding agent inside a workspace by adapting an
+external harness. The `claude-cli` runner spawns Claude Code; the
+`codex-cli` runner spawns the OpenAI Codex CLI. The `openai-api` runner is
+the early-mistake exception — it calls a chat-completions endpoint directly
+with no harness behind it, which the project now considers an architectural
+regression; new runners should wrap a real coding-agent harness rather than
+copy that shape. Implements `AgentRunner`. Naming convention:
 `conduit-runner-{vendor}-{mechanism}` where mechanism is `api` (HTTP) or
 `cli` (subprocess).
 Reference: `packages/conduit/src/agent/runner.ts:4`
@@ -115,15 +117,17 @@ stop conditions. The model alone is just text-in/text-out; the harness is
 what gives it hands and eyes. Claude Code, the OpenAI Codex CLI, and Aider
 are coding-agent harnesses.
 
-Conduit relates to harnesses in two ways. The `claude-cli` and `codex-cli`
-runners delegate the agent loop to an external harness — they are Conduit's
-adapters around Claude Code and the Codex CLI respectively. The `openai-api`
-runner has no external harness to delegate to, so the prompt template,
-workspace, retries, and lifecycle wiring inside Conduit serve as a thin
-harness around the chat-completions call. Either way, Conduit's job above
-this layer is scheduler-shaped: pick an issue, prepare a workspace, hand
-off to a harness. The `@conduit-harness` npm namespace names this
-relationship — Conduit is built around, and ships, coding-agent harnesses.
+Conduit is a scheduler over harnesses, not a harness itself. The intended
+shape is one layer per concern: Conduit picks issues and prepares
+workspaces; a runner adapts an external harness; the harness runs the agent
+loop. The `claude-cli` and `codex-cli` runners follow this pattern. The
+`openai-api` runner is the early-mistake exception — it calls a
+chat-completions endpoint directly, with no real harness behind it. The
+project considers that an architectural regression, not an example to
+follow: new runners should wrap a coding-agent harness rather than
+reproduce a direct-LLM call from inside Conduit. The `@conduit-harness` npm
+namespace names the relationship: Conduit hosts harnesses, it doesn't try
+to be one.
 
 See also: Runner (`packages/conduit/src/agent/runner.ts:4`), Workspace
 (`packages/conduit/src/domain/types.ts:58`).
