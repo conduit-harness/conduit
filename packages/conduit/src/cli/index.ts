@@ -77,6 +77,18 @@ async function appendGitIgnore(repo: string) {
   await writeFile(file, `${existing}${existing.endsWith("\n") || existing.length === 0 ? "" : "\n"}${missing.join("\n")}\n`);
 }
 
+const DEPRECATED_KINDS: Record<"tracker" | "runner", Record<string, string>> = {
+  tracker: {},
+  runner: {
+    "openai-api": "openai-api calls a chat-completions endpoint directly with no agentic harness; prefer claude-cli, codex-cli, or aider. See docs/UBIQUITOUS_LANGUAGE.md.",
+  },
+};
+
+function warnIfDeprecatedKind(logger: Logger, role: "tracker" | "runner", kind: string) {
+  const message = DEPRECATED_KINDS[role][kind];
+  if (message) logger.warn(`${role} kind '${kind}' is deprecated`, { kind, role, reason: message });
+}
+
 async function loadPlugin<T>(role: "tracker" | "runner", kind: string, config: ReturnType<typeof buildConfig>): Promise<T> {
   const pkg = `@conduit-harness/conduit-${role}-${kind}`;
   try {
@@ -102,6 +114,7 @@ async function main() {
   const stateRoot = flag(args.flags, "state-dir");
   const config = buildConfig(workflow, repo, stateRoot ? { stateRoot } : {});
   const logger = new Logger((flag(args.flags, "log-level") as LogLevel | undefined) ?? "info");
+  warnIfDeprecatedKind(logger, "runner", config.agent.kind);
 
   if (args.command === "validate") {
     if (args.flags.preflight) validateForDispatch(config);

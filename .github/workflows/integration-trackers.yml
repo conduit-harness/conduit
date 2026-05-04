@@ -1,0 +1,44 @@
+name: Integration tests (trackers)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/conduit-tracker-*/**'
+      - 'packages/conduit/**'
+      - '.github/workflows/integration-trackers.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/conduit-tracker-*/**'
+      - 'packages/conduit/**'
+      - '.github/workflows/integration-trackers.yml'
+
+jobs:
+  trackers:
+    name: tracker integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.10.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build core package
+        run: pnpm --filter @conduit-harness/conduit build
+
+      - name: Run tracker integration tests
+        run: pnpm test:trackers
