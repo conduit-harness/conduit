@@ -34,8 +34,10 @@ export default class AiderRunner implements AgentRunner {
   private preflight(): void {
     const bin = this.command.trim().split(/\s+/)[0];
     if (!bin) return;
-    const result = spawnSync(bin, ["--version"], { stdio: "ignore" });
-    const notFound = result.error !== undefined && (result.error as NodeJS.ErrnoException).code === "ENOENT";
+    const result = spawnSync(bin, ["--version"], { stdio: "ignore", shell: process.platform === "win32" });
+    const notFound = process.platform === "win32"
+      ? (result.status ?? 1) !== 0
+      : result.error !== undefined && (result.error as NodeJS.ErrnoException).code === "ENOENT";
     if (notFound) {
       throw new Error(
         `aider runner: '${bin}' was not found on PATH.\n\n` +
