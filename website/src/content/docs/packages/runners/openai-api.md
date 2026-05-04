@@ -1,10 +1,18 @@
 ---
-title: OpenAI API runner
-description: Drive any OpenAI-compatible chat completions endpoint as the coding agent.
+title: OpenAI API runner (deprecated)
+description: Deprecated runner that calls a chat-completions endpoint directly. Use a CLI runner that wraps a real coding-agent harness instead.
 ---
 
-:::caution[Coming soon]
-This package is published on npm but has received limited testing. For production workloads, prefer the [Claude CLI runner](/packages/runners/claude-cli/).
+:::danger[Deprecated]
+This runner calls a chat-completions endpoint directly — there is no agent loop, no tool execution, no context management, no sandboxing. In Conduit's terms it does not wrap an [agentic harness](https://github.com/conduit-harness/conduit/blob/main/docs/UBIQUITOUS_LANGUAGE.md#harness-agentic-harness), and so it does not conform to the runner contract.
+
+Use one of the CLI runners instead, each of which adapts a real coding-agent harness:
+
+- [Claude CLI runner](/packages/runners/claude-cli/) — wraps Claude Code
+- [Codex CLI runner](/packages/runners/codex-cli/) — wraps the OpenAI Codex CLI
+- [Aider runner](/packages/runners/aider/) — wraps Aider
+
+The Conduit CLI emits a runtime warning when `agent.kind: openai-api` is configured.
 :::
 
 `@conduit-harness/conduit-runner-openai-api` calls an OpenAI-compatible chat completions endpoint over HTTP. Works with OpenAI, Azure OpenAI, GitHub Models, and other compatible providers.

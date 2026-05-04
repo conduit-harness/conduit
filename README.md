@@ -10,7 +10,7 @@ Conduit runs a continuous loop:
 - Per eligible issue:
   - Create isolated git worktree (`.conduit/workspaces/<issue-id>`)
   - Render prompt from `workflow.md` template + issue context
-  - Launch agent inside the worktree (openai-api / claude-cli / codex-cli)
+  - Launch agent inside the worktree (claude-cli / codex-cli / aider)
   - Write result back to tracker *(optional)* — comment + state transition
 - ↺ repeat every 30s
 
@@ -35,9 +35,10 @@ Conduit uses a plugin model — install the tracker and runner you need alongsid
 
 | Runner | `agent.kind` | Mechanism | Install |
 |--------|-------------|-----------|---------|
-| OpenAI API  | `openai-api` | HTTP — any OpenAI-compatible chat completions endpoint | `npm install -g @conduit-harness/conduit-runner-openai-api` |
 | Claude CLI  | `claude-cli` | CLI subprocess — requires `claude` (Claude Code) installed | `npm install -g @conduit-harness/conduit-runner-claude-cli` |
 | Codex CLI   | `codex-cli`  | CLI subprocess — requires `codex` (OpenAI Codex CLI) installed | `npm install -g @conduit-harness/conduit-runner-codex-cli` |
+| Aider       | `aider`      | CLI subprocess — requires `aider` installed | `npm install -g @conduit-harness/conduit-runner-aider` |
+| OpenAI API *(deprecated)* | `openai-api` | HTTP — chat-completions endpoint, no harness behind it. Kept for compatibility; emits a runtime warning. Prefer one of the CLI runners above. | `npm install -g @conduit-harness/conduit-runner-openai-api` |
 
 Each plugin package includes an example workflow under its own `examples/` directory.
 
@@ -61,10 +62,10 @@ workspace:
   strategy: git-worktree
   base_ref: main
 agent:
-  kind: openai-api
+  kind: claude-cli
   max_concurrent_agents: 1
-openai-api:
-  model: gpt-4o
+claude-cli:
+  model: claude-sonnet-4-6
 ---
 Implement the Linear issue below in this repository.
 
@@ -85,8 +86,9 @@ Create `.env`:
 
 ```dotenv
 LINEAR_API_KEY=lin_api_...
-OPENAI_API_KEY=sk-...
 ```
+
+The `claude` (Claude Code) binary must be installed and on `PATH`; it will prompt for credentials on first launch. See the [Claude CLI runner docs](https://conduit.tomhofman.dev/packages/runners/claude-cli/) for details.
 
 Run:
 

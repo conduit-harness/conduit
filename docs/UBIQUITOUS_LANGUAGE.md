@@ -89,13 +89,12 @@ Reference: `packages/conduit/src/tracker/tracker.ts:3`
 ### Runner
 A plugin that drives a coding agent inside a workspace by adapting an
 external harness. The `claude-cli` runner spawns Claude Code; the
-`codex-cli` runner spawns the OpenAI Codex CLI. The `openai-api` runner is
-the early-mistake exception — it calls a chat-completions endpoint directly
-with no harness behind it, which the project now considers an architectural
-regression; new runners should wrap a real coding-agent harness rather than
-copy that shape. Implements `AgentRunner`. Naming convention:
+`codex-cli` runner spawns the OpenAI Codex CLI; the `aider` runner spawns
+Aider. Implements `AgentRunner`. Naming convention:
 `conduit-runner-{vendor}-{mechanism}` where mechanism is `api` (HTTP) or
-`cli` (subprocess).
+`cli` (subprocess) — but only `cli` runners conform to the harness
+contract; an `api` runner that calls a chat-completions endpoint directly,
+without a harness, is non-conformant and not a model for new plugins.
 Reference: `packages/conduit/src/agent/runner.ts:4`
 
 ### Plugin Kind
@@ -120,14 +119,9 @@ are coding-agent harnesses.
 Conduit is a scheduler over harnesses, not a harness itself. The intended
 shape is one layer per concern: Conduit picks issues and prepares
 workspaces; a runner adapts an external harness; the harness runs the agent
-loop. The `claude-cli` and `codex-cli` runners follow this pattern. The
-`openai-api` runner is the early-mistake exception — it calls a
-chat-completions endpoint directly, with no real harness behind it. The
-project considers that an architectural regression, not an example to
-follow: new runners should wrap a coding-agent harness rather than
-reproduce a direct-LLM call from inside Conduit. The `@conduit-harness` npm
-namespace names the relationship: Conduit hosts harnesses, it doesn't try
-to be one.
+loop. New runners should wrap a real coding-agent harness — calling an LLM
+directly from Conduit is out of scope. The `@conduit-harness` npm namespace
+names the relationship: Conduit hosts harnesses, it doesn't try to be one.
 
 See also: Runner (`packages/conduit/src/agent/runner.ts:4`), Workspace
 (`packages/conduit/src/domain/types.ts:58`).
