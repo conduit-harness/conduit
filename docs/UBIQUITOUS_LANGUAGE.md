@@ -27,6 +27,10 @@ This is a contributor reference. User-facing documentation lives at
 - **Plurals.** "issues" and "attempts" pluralize naturally. Do not pluralize
   "workspace" when referring to the per-attempt directory tree — each attempt
   has one workspace.
+- **The CLI.** Always say "the Conduit CLI" or "the `conduit` binary" — never
+  bare "the CLI", since contributors and operators routinely run several
+  other CLIs in the same context: the Claude Code CLI (`claude`), the OpenAI
+  Codex CLI (`codex`), the GitHub CLI (`gh`), and `git`.
 - **The workflow file.** The CLI's default discovered filename is
   `WORKFLOW.md` at the repo root (see `discoverWorkflow` in
   `packages/conduit/src/config/workflow.ts:13`). Many examples place it at
@@ -83,10 +87,13 @@ client" as a noun in prose.
 Reference: `packages/conduit/src/tracker/tracker.ts:3`
 
 ### Runner
-A plugin that executes a coding agent inside a workspace. Implements
-`AgentRunner`. Built-in kinds: `openai-api`, `claude-cli`, `codex-cli`. Note
-the naming convention `conduit-runner-{vendor}-{mechanism}` where mechanism
-is `api` (HTTP) or `cli` (subprocess).
+A plugin that drives a coding agent inside a workspace. The `claude-cli` and
+`codex-cli` runners spawn an external harness (Claude Code, Codex CLI) and
+let it run its own agent loop; the `openai-api` runner talks directly to a
+chat-completions endpoint, so Conduit itself supplies the harness around the
+model. Implements `AgentRunner`. Naming convention:
+`conduit-runner-{vendor}-{mechanism}` where mechanism is `api` (HTTP) or
+`cli` (subprocess).
 Reference: `packages/conduit/src/agent/runner.ts:4`
 
 ### Plugin Kind
@@ -96,11 +103,43 @@ maps it to an npm package name
 the plugin's default-exported class.
 Reference: `packages/conduit/src/cli/index.ts:80`
 
-### Harness
-The `@conduit-harness` npm namespace and the broader plugin-host pattern.
-Core lives at `@conduit-harness/conduit`; trackers and runners are sibling
-packages under the same namespace.
-Reference: `packages/conduit/package.json:2`
+---
+
+## Harness model
+
+### Harness (Agentic Harness)
+The runtime scaffolding around a language model that turns it into a usable
+coding agent: the agent loop, tool definitions and tool execution, prompt
+assembly and context management, sandbox/workspace isolation, retry and
+stop conditions. The model alone is just text-in/text-out; the harness is
+what gives it hands and eyes. Claude Code, the OpenAI Codex CLI, and Aider
+are coding-agent harnesses.
+
+Conduit relates to harnesses in two ways. The `claude-cli` and `codex-cli`
+runners delegate the agent loop to an external harness — they are Conduit's
+adapters around Claude Code and the Codex CLI respectively. The `openai-api`
+runner has no external harness to delegate to, so the prompt template,
+workspace, retries, and lifecycle wiring inside Conduit serve as a thin
+harness around the chat-completions call. Either way, Conduit's job above
+this layer is scheduler-shaped: pick an issue, prepare a workspace, hand
+off to a harness. The `@conduit-harness` npm namespace names this
+relationship — Conduit is built around, and ships, coding-agent harnesses.
+
+See also: Runner (`packages/conduit/src/agent/runner.ts:4`), Workspace
+(`packages/conduit/src/domain/types.ts:58`).
+
+### Harness Engineering
+The discipline of designing and tuning a harness for a given task: which
+tools to expose, how to structure the prompt, how to manage long contexts,
+how to detect and recover from failures, how to evaluate task completion.
+In Conduit, harness engineering surfaces in the workflow file (prompt
+template, label filters, lifecycle-event writes, retry policy) and inside
+the runner plugins (timeouts, stall detection, transport details). Tuning
+these knobs is the primary leverage operators have over agent behavior
+without modifying the underlying model or external harness.
+
+See also: Workflow Definition (`packages/conduit/src/domain/types.ts:16`),
+prompt rendering (`packages/conduit/src/prompt/render.ts`).
 
 ---
 
@@ -178,32 +217,25 @@ Reference: `packages/conduit/src/domain/types.ts:22`
 
 ---
 
-## CLI modes & flags
+## CLI
 
-### `conduit validate`
-Parse the workflow and build the `ServiceConfig` without making external
-calls. With `--preflight`, additionally require that tracker/agent
-credentials and connectivity are present (`validateForDispatch`).
-Reference: `packages/conduit/src/cli/index.ts:106`
+### Conduit CLI
+The `conduit` executable shipped by `@conduit-harness/conduit`. Use the
+fully qualified name "Conduit CLI" or the literal `conduit` whenever the
+context contains other CLIs — Claude Code (`claude`), Codex (`codex`),
+GitHub (`gh`), `git` — which is almost always.
 
-### `conduit once`
-Run a single tick and exit. Suitable for cron-driven schedules and CI.
-Reference: `packages/conduit/src/cli/index.ts:118`
+Subcommands: `init`, `validate`, `once`, `start`, `version`.
+- `validate` parses the workflow and builds the `ServiceConfig` without
+  external calls; `--preflight` extends it to require live tracker/agent
+  credentials and connectivity (`validateForDispatch`).
+- `once` runs a single tick and exits. Suitable for cron and CI.
+- `start` runs the polling loop until `SIGINT` or `SIGTERM`.
+- `--dry-run` (on `once` and `start`) selects issues during a tick but
+  skips workspace preparation, prompt rendering, and the agent call —
+  logging each issue that would have been dispatched.
 
-### `conduit start`
-Run the polling loop continuously until `SIGINT` or `SIGTERM`.
-Reference: `packages/conduit/src/cli/index.ts:122`
-
-### Dry Run (`--dry-run`)
-Select issues during a tick but do not prepare workspaces, render prompts,
-or run agents. Logs each issue that would have been dispatched. Applies to
-both `once` and `start`.
-Reference: `packages/conduit/src/orchestrator/orchestrator.ts:21`
-
-### Preflight (`--preflight`)
-Extends `conduit validate` to require live credentials/connectivity rather
-than only static config validity.
-Reference: `packages/conduit/src/config/workflow.ts:89`
+Reference: `packages/conduit/src/cli/index.ts:92`
 
 ---
 
