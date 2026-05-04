@@ -1,6 +1,6 @@
 # Conduit
 
-Conduit is an agentic coding scheduler. It reads issues from a tracker, creates an isolated git worktree for each, renders a prompt, runs a coding agent, and optionally writes results back to the tracker.
+Conduit is an agentic coding scheduler. It reads issues from a tracker, creates an isolated git worktree for each, renders a prompt, and hands off to a coding-agent harness (Claude Code, Codex CLI, or Aider) inside that worktree — optionally writing results back to the tracker. Conduit handles dispatch, isolation, and prompting; the harness handles the agent loop.
 
 ## How it works
 
@@ -10,7 +10,7 @@ Conduit runs a continuous loop:
 - Per eligible issue:
   - Create isolated git worktree (`.conduit/workspaces/<issue-id>`)
   - Render prompt from `workflow.md` template + issue context
-  - Launch agent inside the worktree (claude-cli / codex-cli / aider)
+  - Hand off to a coding-agent harness inside the worktree (Claude Code, Codex CLI, or Aider — selected by `agent.kind`)
   - Write result back to tracker *(optional)* — comment + state transition
 - ↺ repeat every 30s
 
