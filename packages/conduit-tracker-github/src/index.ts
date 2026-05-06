@@ -60,6 +60,29 @@ export default class GitHubTrackerClient extends BaseTracker {
     await this.request("PATCH", `/repos/${this.owner}/${this.repo}/issues/${issueId}`, { state });
   }
 
+  async preflightAuth(): Promise<void> {
+    if (!this.apiKey) {
+      throw new Error(
+        `GitHub tracker: authentication required.\n\n` +
+        `Set the GITHUB_TOKEN environment variable or configure 'api_key' in your workflow.\n` +
+        `See https://docs.github.com/en/authentication for setup instructions.\n`
+      );
+    }
+    try {
+      await this.get<{ login: string }>("/user");
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : String(cause);
+      if (message.includes("401") || message.includes("403")) {
+        throw new Error(
+          `GitHub tracker: invalid or expired token.\n\n` +
+          `Update your GITHUB_TOKEN environment variable or 'api_key' configuration.\n` +
+          `See https://docs.github.com/en/authentication for setup instructions.\n`
+        );
+      }
+      throw cause;
+    }
+  }
+
   private async fetchByState(state: "open" | "closed"): Promise<Issue[]> {
     const out: Issue[] = []; let page = 1;
     do {

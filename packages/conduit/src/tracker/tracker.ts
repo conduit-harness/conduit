@@ -7,6 +7,7 @@ export interface IssueTracker {
   comment(issueId: string, body: string): Promise<void>;
   transition(issueId: string, stateName: string): Promise<void>;
   applyWrite(event: TrackerWriteEvent, issue: Issue, body: string): Promise<void>;
+  preflightAuth?(): Promise<void>;
 }
 
 export abstract class BaseTracker implements IssueTracker {

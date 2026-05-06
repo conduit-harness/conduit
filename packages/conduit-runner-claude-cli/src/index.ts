@@ -1,6 +1,9 @@
 import { spawn, spawnSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
 import { writeFile, unlink } from "node:fs/promises";
 import { join } from "node:path";
+import os from "node:os";
+import path from "node:path";
 import type { AgentResult, AgentRunner, AgentUsage, RunAttempt, ServiceConfig } from "@conduit-harness/conduit";
 
 function str(v: unknown, fallback: string): string { return typeof v === "string" && v.length > 0 ? v : fallback; }
@@ -43,6 +46,20 @@ export default class ClaudeCliRunner implements AgentRunner {
     this.turnTimeoutMs = num(raw.turn_timeout_ms, 3600000);
     this.stallTimeoutMs = num(raw.stall_timeout_ms, 300000);
     this.preflight();
+  }
+
+  async preflightAuth(): Promise<void> {
+    const credentialsPath = path.join(os.homedir(), ".claude", "credentials.json");
+    if (!existsSync(credentialsPath)) {
+      throw new Error(`claude-cli runner: authentication required.\n\nRun the following to authenticate:\n  claude /login\n`);
+    }
+    try {
+      const content = readFileSync(credentialsPath, "utf8");
+      const creds = JSON.parse(content) as Record<string, unknown>;
+      if (!creds || typeof creds !== "object" || Object.keys(creds).length === 0) throw new Error("credentials file is empty");
+    } catch {
+      throw new Error(`claude-cli runner: authentication required.\n\nRun the following to authenticate:\n  claude /login\n`);
+    }
   }
 
   private preflight(): void {

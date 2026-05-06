@@ -104,7 +104,13 @@ async function main() {
   const logger = new Logger((flag(args.flags, "log-level") as LogLevel | undefined) ?? "info");
 
   if (args.command === "validate") {
-    if (args.flags.preflight) validateForDispatch(config);
+    validateForDispatch(config);
+    if (args.flags.preflight) {
+      const tracker: IssueTracker = config.tracker.kind === "fake" ? new FakeTracker(config) : await loadPlugin<IssueTracker>("tracker", config.tracker.kind, config);
+      const agent: AgentRunner = config.agent.kind === "fake" ? new FakeAgentRunner() : await loadPlugin<AgentRunner>("runner", config.agent.kind, config);
+      if (tracker.preflightAuth) await tracker.preflightAuth();
+      if (agent.preflightAuth) await agent.preflightAuth();
+    }
     logger.info("workflow valid", { workflow: workflow.path, tracker: config.tracker.kind, agent: config.agent.kind, repo: config.repoPath, state: config.state.root });
     return;
   }
