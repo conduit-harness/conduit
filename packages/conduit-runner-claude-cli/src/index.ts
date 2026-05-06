@@ -39,12 +39,16 @@ export default class ClaudeCliRunner implements AgentRunner {
   private readonly command: string;
   private readonly turnTimeoutMs: number;
   private readonly stallTimeoutMs: number;
+  private readonly ollamaBackendUrl: string;
+  private readonly ollamaModel: string;
 
   constructor(config: ServiceConfig) {
     const raw = config.agent.raw;
     this.command = str(raw.command, "claude --dangerously-skip-permissions --output-format json -p -");
     this.turnTimeoutMs = num(raw.turn_timeout_ms, 3600000);
     this.stallTimeoutMs = num(raw.stall_timeout_ms, 300000);
+    this.ollamaBackendUrl = str(raw.ollama_backend_url, "");
+    this.ollamaModel = str(raw.ollama_model, "");
     this.preflight();
   }
 
@@ -79,7 +83,43 @@ export default class ClaudeCliRunner implements AgentRunner {
     }
   }
 
+  private async runViaOllama(prompt: string): Promise<AgentResult> {
+    if (!this.ollamaBackendUrl || !this.ollamaModel) {
+      return { status: "failed", output: "", error: "ollama_backend_url or ollama_model not configured" };
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.turnTimeoutMs);
+
+      const response = await fetch(`${this.ollamaBackendUrl}/api/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: this.ollamaModel, prompt, stream: false }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        return { status: "failed", output: "", error: `ollama_http_${response.status}` };
+      }
+
+      const data = await response.json() as { response: string; done?: boolean };
+      return { status: "succeeded", output: data.response };
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        return { status: "timed_out", output: "", error: "claude_turn_timeout" };
+      }
+      return { status: "failed", output: "", error: `ollama_error: ${err instanceof Error ? err.message : String(err)}` };
+    }
+  }
+
   async run(attempt: RunAttempt, prompt: string): Promise<AgentResult> {
+    if (this.ollamaBackendUrl) {
+      return this.runViaOllama(prompt);
+    }
+
     // Write the prompt to a file in the workspace and let the shell pipe it
     // into claude's stdin via a shell redirect. Direct Node->child stdin piping
     // does not work reliably on Windows: powershell -Command does not forward
