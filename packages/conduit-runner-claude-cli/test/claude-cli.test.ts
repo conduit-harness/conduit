@@ -47,7 +47,7 @@ describe("ClaudeCliRunner", () => {
       });
 
       const config = mockConfig({
-        raw: { ollama_backend_url: "http://localhost:11434", ollama_model: "qwen2.5-coder", turn_timeout_ms: 5000 },
+        raw: { command: "echo", ollama_backend_url: "http://localhost:11434", ollama_model: "qwen2.5-coder", turn_timeout_ms: 5000 },
       });
       const runner = new ClaudeCliRunner(config);
       const result = await runner.run(mockAttempt(), "Test prompt");
@@ -60,7 +60,7 @@ describe("ClaudeCliRunner", () => {
       vi.spyOn(global, "fetch").mockImplementation(() => Promise.reject(new Error("Connection refused")));
 
       const config = mockConfig({
-        raw: { ollama_backend_url: "http://localhost:11434", ollama_model: "qwen2.5-coder", turn_timeout_ms: 5000 },
+        raw: { command: "echo", ollama_backend_url: "http://localhost:11434", ollama_model: "qwen2.5-coder", turn_timeout_ms: 5000 },
       });
       const runner = new ClaudeCliRunner(config);
       const result = await runner.run(mockAttempt(), "Test prompt");
@@ -71,7 +71,7 @@ describe("ClaudeCliRunner", () => {
 
     it("returns error if ollama_backend_url is set but ollama_model is missing", async () => {
       const config = mockConfig({
-        raw: { ollama_backend_url: "http://localhost:11434", ollama_model: "", turn_timeout_ms: 5000 },
+        raw: { command: "echo", ollama_backend_url: "http://localhost:11434", ollama_model: "", turn_timeout_ms: 5000 },
       });
       const runner = new ClaudeCliRunner(config);
       const result = await runner.run(mockAttempt(), "Test prompt");
@@ -84,7 +84,7 @@ describe("ClaudeCliRunner", () => {
   describe("Claude CLI fallback", () => {
     it("does not use Ollama when ollama_backend_url is not configured", () => {
       const config = mockConfig({
-        raw: { command: "claude", turn_timeout_ms: 5000 },
+        raw: { command: "echo", turn_timeout_ms: 5000 },
       });
       const runner = new ClaudeCliRunner(config);
 
