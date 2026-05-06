@@ -22,6 +22,14 @@ agent:
 
 claude-cli:
   model: claude-sonnet-4-6
+  # claude -p in default text mode buffers ALL output (including tool-use
+  # traces) until the run completes, so the runner's stall timer cannot
+  # tell "thinking quietly" from "actually hung". Disable stall detection
+  # and rely on the turn_timeout for runaway protection. The proper fix
+  # is to switch the runner to --output-format stream-json (tracked in
+  # #40 / #41); this is the dogfood workaround.
+  stall_timeout_ms: 0
+  turn_timeout_ms: 1800000
 
 polling:
   interval_ms: 30000
