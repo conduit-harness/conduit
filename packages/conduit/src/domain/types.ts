@@ -49,6 +49,7 @@ export type ServiceConfig = {
   agent: {
     kind: string;
     maxConcurrentAgents: number;
+    maxAttempts: number;
     maxRetryBackoffMs: number;
     maxConcurrentAgentsByState: Record<string, number>;
     raw: Record<string, unknown>;
