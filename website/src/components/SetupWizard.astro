@@ -44,28 +44,13 @@
       <h3>2. Pick a runner</h3>
       <div class="choices" role="radiogroup" aria-label="Runner">
         <label><input type="radio" name="runner" value="claude-cli" checked /> <span>Claude Code CLI</span></label>
-        <label><input type="radio" name="runner" value="claude-api" /> <span>Claude API</span></label>
         <label><input type="radio" name="runner" value="codex-cli" /> <span>OpenAI Codex CLI</span></label>
-        <label><input type="radio" name="runner" value="openai-api" /> <span>OpenAI-compatible API</span></label>
         <label><input type="radio" name="runner" value="aider" /> <span>Aider (Ollama, self-hosted)</span></label>
       </div>
       <div class="runner-fields">
         <div data-runner-field="claude-cli">
           <label>Model
             <input type="text" data-input="claude-cli.model" value="claude-sonnet-4-6" />
-          </label>
-        </div>
-        <div data-runner-field="claude-api" hidden>
-          <label>Model
-            <input type="text" data-input="claude-api.model" value="claude-sonnet-4-6" />
-          </label>
-        </div>
-        <div data-runner-field="openai-api" hidden>
-          <label>Model
-            <input type="text" data-input="openai-api.model" value="gpt-4o" />
-          </label>
-          <label>Base URL
-            <input type="text" data-input="openai-api.base_url" value="https://api.openai.com/v1" />
           </label>
         </div>
         <div data-runner-field="codex-cli" hidden>
@@ -168,7 +153,7 @@
 
 <script>
   type TrackerKind = "github" | "linear" | "jira" | "gitlab";
-  type RunnerKind = "claude-cli" | "claude-api" | "openai-api" | "codex-cli" | "aider";
+  type RunnerKind = "claude-cli" | "codex-cli" | "aider";
   type TemplateKind = "autonomous" | "human-in-the-loop" | "reply-draft";
   type InferenceMode = "cpu" | "gpu";
   type CpuVendor = "intel" | "amd" | "qualcomm" | "apple";
@@ -421,9 +406,6 @@
     }
 
     function runnerPackage(r: RunnerKind) {
-      // claude-api maps onto the openai-api runner against Anthropic's
-      // OpenAI-compatible endpoint, so the package is the same.
-      if (r === "claude-api") return "@conduit-harness/conduit-runner-openai-api";
       return `@conduit-harness/conduit-runner-${r}`;
     }
 
@@ -555,28 +537,6 @@
           "  max_concurrent_agents: 1",
           "claude-cli:",
           `  model: ${state.inputs["claude-cli.model"] || "claude-sonnet-4-6"}`,
-        ].join("\n");
-      }
-      if (r === "claude-api") {
-        return [
-          "agent:",
-          "  kind: openai-api",
-          "  max_concurrent_agents: 1",
-          "openai-api:",
-          `  model: ${state.inputs["claude-api.model"] || "claude-sonnet-4-6"}`,
-          "  base_url: https://api.anthropic.com/v1",
-          "  token: $ANTHROPIC_API_KEY",
-        ].join("\n");
-      }
-      if (r === "openai-api") {
-        return [
-          "agent:",
-          "  kind: openai-api",
-          "  max_concurrent_agents: 1",
-          "openai-api:",
-          `  model: ${state.inputs["openai-api.model"] || "gpt-4o"}`,
-          `  base_url: ${state.inputs["openai-api.base_url"] || "https://api.openai.com/v1"}`,
-          "  token: $OPENAI_API_KEY",
         ].join("\n");
       }
       if (r === "codex-cli") {
@@ -721,11 +681,7 @@
       }
       if (state.tracker === "gitlab") lines.push("GITLAB_TOKEN=glpat-...");
 
-      if (state.runner === "claude-api")
-        lines.push("ANTHROPIC_API_KEY=sk-ant-...");
-      else if (state.runner === "openai-api")
-        lines.push("OPENAI_API_KEY=sk-...");
-      // claude-cli and codex-cli authenticate via their own CLI tools.
+      // claude-cli, codex-cli, and aider authenticate via their own CLI tools.
       return lines.join("\n");
     }
 

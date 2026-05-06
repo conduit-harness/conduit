@@ -2,6 +2,7 @@
   "name": "@conduit-harness/conduit-tracker-linear",
   "version": "0.0.1",
   "description": "Conduit tracker plugin for Linear",
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" }

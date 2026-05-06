@@ -12,9 +12,9 @@ export default defineConfig({
       title: "Conduit",
       description:
         "Agentic coding scheduler — read issues, run agents in isolated worktrees, write results back.",
-      social: {
-        github: "https://github.com/conduit-harness/conduit",
-      },
+      social: [
+        { icon: "github", label: "GitHub", href: "https://github.com/conduit-harness/conduit" },
+      ],
       editLink: {
         baseUrl:
           "https://github.com/conduit-harness/conduit/edit/main/website/",

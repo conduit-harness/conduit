@@ -2,6 +2,7 @@
   "name": "@conduit-harness/conduit-runner-claude-cli",
   "version": "0.0.1",
   "description": "Conduit agent runner plugin for Claude Code CLI",
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" }
