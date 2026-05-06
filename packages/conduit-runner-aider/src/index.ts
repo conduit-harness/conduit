@@ -11,7 +11,7 @@ function nativeShell(): [string, string] { return process.platform === "win32" ?
 function parseShorthandNumber(s: string): number | undefined {
   const match = /^([\d.]+)([kmb])?$/i.exec(s.trim());
   if (!match) return undefined;
-  const base = Number.parseFloat(match[1]);
+  const base = Number.parseFloat(match[1] ?? "");
   if (!Number.isFinite(base)) return undefined;
   const suffix = (match[2] ?? "").toLowerCase();
   const multipliers: Record<string, number> = { k: 1000, m: 1000000, b: 1000000000 };
@@ -23,8 +23,8 @@ function parseAiderTokenUsage(output: string): AgentUsage | undefined {
   if (!tokenLine) return undefined;
   const sentMatch = /(\d+\.?\d*[kmb]?)\s*(?:tokens?)?\s*sent/i.exec(tokenLine);
   const receivedMatch = /(\d+\.?\d*[kmb]?)\s*(?:tokens?)?\s*received/i.exec(tokenLine);
-  const inputTokens = sentMatch ? (parseShorthandNumber(sentMatch[1]) ?? 0) : 0;
-  const outputTokens = receivedMatch ? (parseShorthandNumber(receivedMatch[1]) ?? 0) : 0;
+  const inputTokens = sentMatch ? (parseShorthandNumber(sentMatch[1] ?? "") ?? 0) : 0;
+  const outputTokens = receivedMatch ? (parseShorthandNumber(receivedMatch[1] ?? "") ?? 0) : 0;
   if (inputTokens === 0 && outputTokens === 0) return undefined;
   return { inputTokens, outputTokens, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 };
 }
