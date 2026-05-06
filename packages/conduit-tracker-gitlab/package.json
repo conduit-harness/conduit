@@ -2,6 +2,7 @@
   "name": "@conduit-harness/conduit-tracker-gitlab",
   "version": "0.0.1",
   "description": "Conduit tracker plugin for GitLab Issues",
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" }

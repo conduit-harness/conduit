@@ -2,6 +2,7 @@
   "name": "@conduit-harness/conduit",
   "version": "0.0.1",
   "description": "Conduit: a TypeScript implementation of the Symphony service specification",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/conduit-harness/conduit.git"
