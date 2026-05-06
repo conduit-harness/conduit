@@ -88,10 +88,9 @@ export default class CodexCliRunner implements AgentRunner {
       }
     }
 
-    return {
-      output: agentMessages.join("\n"),
-      usage,
-    };
+    const result: { output: string; usage?: AgentUsage } = { output: agentMessages.join("\n") };
+    if (usage !== undefined) result.usage = usage;
+    return result;
   }
 
   async preflightAuth(): Promise<void> {
