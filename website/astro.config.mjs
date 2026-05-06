@@ -48,6 +48,10 @@ export default defineConfig({
           label: "Packages",
           autogenerate: { directory: "packages" },
         },
+        {
+          label: "Blog",
+          autogenerate: { directory: "blog" },
+        },
         coreTypeDocSidebar,
       ],
     }),

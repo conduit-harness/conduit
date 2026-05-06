@@ -128,6 +128,7 @@ Full docs, package guides, and the API reference live at **<https://conduit.tomh
 - [Non-intrusive use](https://conduit.tomhofman.dev/reference/non-intrusive-use/) — running against external repos without leaving artifacts
 - [Status](https://conduit.tomhofman.dev/reference/status/) — current capabilities and known limitations
 - [Symphony specification](https://conduit.tomhofman.dev/reference/spec/) — the upstream spec this implementation follows
+- [0.1.0 release post](https://conduit.tomhofman.dev/blog/2026-05-06-conduit-0-1-0/) — announcement and feature overview
 - [CONTRIBUTING.md](CONTRIBUTING.md) — development setup and contribution guidelines
 - [DEVELOPMENT.md](DEVELOPMENT.md) — trunk model, pre-release cadence, patch release flow
 - [CHANGELOG.md](CHANGELOG.md) — release history
