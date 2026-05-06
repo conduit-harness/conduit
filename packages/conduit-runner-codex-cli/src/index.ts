@@ -12,7 +12,7 @@ export default class CodexCliRunner implements AgentRunner {
 
   constructor(config: ServiceConfig) {
     const raw = config.agent.raw;
-    this.command = str(raw.command, "codex");
+    this.command = str(raw.command, "codex exec -s workspace-write -");
     this.turnTimeoutMs = num(raw.turn_timeout_ms, 3600000);
     this.stallTimeoutMs = num(raw.stall_timeout_ms, 300000);
   }
