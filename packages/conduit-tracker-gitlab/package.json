@@ -1,6 +1,6 @@
 {
   "name": "@conduit-harness/conduit-tracker-gitlab",
-  "version": "0.0.2-rc2",
+  "version": "0.0.1",
   "description": "Conduit tracker plugin for GitLab Issues",
   "type": "module",
   "exports": {
@@ -15,7 +15,7 @@
   "publishConfig": { "access": "public" },
   "repository": { "type": "git", "url": "git+https://github.com/conduit-harness/conduit.git" },
   "engines": { "node": ">=24.0.0" },
-  "peerDependencies": { "@conduit-harness/conduit": ">=0.0.2-rc2" },
+  "peerDependencies": { "@conduit-harness/conduit": ">=0.0.1" },
   "devDependencies": {
     "@conduit-harness/conduit": "workspace:*",
     "@types/node": "latest",
