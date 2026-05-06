@@ -13,7 +13,7 @@ This implementation follows the [Symphony service specification](https://conduit
 
 Conduit runs a continuous loop:
 
-- Poll tracker for issues matching active states and labels (Linear / GitHub / Jira / GitLab)
+- Poll tracker for issues matching active states and labels (Linear / GitHub / Jira / GitLab / Azure DevOps)
 - Per eligible issue:
   - Create isolated git worktree (`.conduit/workspaces/<issue-id>`)
   - Render prompt from `workflow.md` template + issue context
@@ -37,6 +37,7 @@ Conduit uses a plugin model — install the tracker and runner you need alongsid
 | GitHub | `github` | `npm install -g @conduit-harness/conduit-tracker-github` |
 | Jira   | `jira`   | `npm install -g @conduit-harness/conduit-tracker-jira` |
 | GitLab | `gitlab` | `npm install -g @conduit-harness/conduit-tracker-gitlab` |
+| Azure DevOps | `azuredevops` | `npm install -g @conduit-harness/conduit-tracker-azuredevops` |
 
 ### Runners
 
