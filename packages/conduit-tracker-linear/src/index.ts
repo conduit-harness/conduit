@@ -25,6 +25,7 @@ const STATES = `query ConduitIssueStates($ids: [ID!]) { issues(filter: { id: { i
 const COMMENT = `mutation ConduitComment($issueId: String!, $body: String!) { commentCreate(input: { issueId: $issueId, body: $body }) { success } }`;
 const ISSUE_TEAM = `query ConduitIssueTeam($id: String!) { issue(id: $id) { id team { id states { nodes { id name } } } state { name } } }`;
 const UPDATE = `mutation ConduitTransition($id: String!, $stateId: String!) { issueUpdate(id: $id, input: { stateId: $stateId }) { success } }`;
+const VIEWER = `query ConduitViewer { viewer { id } }`;
 
 type GqlResponse<T> = { data?: T; errors?: Array<{ message: string }> };
 
@@ -79,6 +80,29 @@ export default class LinearTrackerClient extends BaseTracker {
     const state = data.issue.team?.states?.nodes?.find(s => s.name.toLowerCase() === stateName.toLowerCase());
     if (!state) throw new Error(`linear_state_not_found: ${stateName}`);
     await this.gql(UPDATE, { id: issueId, stateId: state.id });
+  }
+
+  async preflightAuth(): Promise<void> {
+    if (!this.apiKey) {
+      throw new Error(
+        `Linear tracker: authentication required.\n\n` +
+        `Set the LINEAR_API_KEY environment variable or configure 'api_key' in your workflow.\n` +
+        `See https://linear.app/docs/graphql/working-with-the-graphql-api for setup instructions.\n`
+      );
+    }
+    try {
+      await this.gql<{ viewer?: { id?: string } }>(VIEWER, {});
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : String(cause);
+      if (message.includes("401") || message.includes("403") || message.includes("unauthorized")) {
+        throw new Error(
+          `Linear tracker: invalid or expired token.\n\n` +
+          `Update your LINEAR_API_KEY environment variable or 'api_key' configuration.\n` +
+          `See https://linear.app/docs/graphql/working-with-the-graphql-api for setup instructions.\n`
+        );
+      }
+      throw cause;
+    }
   }
 
   private async gql<T>(query: string, variables: Record<string, unknown>): Promise<T> {

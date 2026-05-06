@@ -60,6 +60,31 @@ export default class JiraTrackerClient extends BaseTracker {
     await this.post(`/issue/${issueId}/transitions`, { transition: { id: match.id } });
   }
 
+  async preflightAuth(): Promise<void> {
+    const apiKey = str(process.env.JIRA_API_TOKEN);
+    const email = str(process.env.JIRA_EMAIL);
+    if (!apiKey || !email || !this.domain) {
+      throw new Error(
+        `Jira tracker: authentication required.\n\n` +
+        `Set the JIRA_API_TOKEN and JIRA_EMAIL environment variables or configure them in your workflow.\n` +
+        `See https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/ for setup instructions.\n`
+      );
+    }
+    try {
+      await this.get<{ name?: string }>("/myself");
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : String(cause);
+      if (message.includes("401") || message.includes("403")) {
+        throw new Error(
+          `Jira tracker: invalid or expired token.\n\n` +
+          `Update your JIRA_API_TOKEN and JIRA_EMAIL environment variables or configuration.\n` +
+          `See https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/ for setup instructions.\n`
+        );
+      }
+      throw cause;
+    }
+  }
+
   private async get<T>(path: string): Promise<T> {
     const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), 30000);
     try {

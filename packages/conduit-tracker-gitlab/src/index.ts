@@ -57,6 +57,29 @@ export default class GitLabTrackerClient extends BaseTracker {
     await this.request("PUT", `/projects/${this.project}/issues/${issueId}`, { state_event: stateEvent });
   }
 
+  async preflightAuth(): Promise<void> {
+    if (!this.apiKey) {
+      throw new Error(
+        `GitLab tracker: authentication required.\n\n` +
+        `Set the GITLAB_TOKEN environment variable or configure 'api_key' in your workflow.\n` +
+        `See https://docs.gitlab.com/ee/api/index.html#authentication for setup instructions.\n`
+      );
+    }
+    try {
+      await this.get<{ id?: number }>("/user");
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : String(cause);
+      if (message.includes("401") || message.includes("403")) {
+        throw new Error(
+          `GitLab tracker: invalid or expired token.\n\n` +
+          `Update your GITLAB_TOKEN environment variable or 'api_key' configuration.\n` +
+          `See https://docs.gitlab.com/ee/api/index.html#authentication for setup instructions.\n`
+        );
+      }
+      throw cause;
+    }
+  }
+
   private async fetchByGLState(state: "opened" | "closed"): Promise<Issue[]> {
     const out: Issue[] = []; let page = 1;
     do {
