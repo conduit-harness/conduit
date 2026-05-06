@@ -20,6 +20,27 @@ importers:
         specifier: latest
         version: 4.4.2
     devDependencies:
+      '@conduit-harness/conduit-runner-aider':
+        specifier: workspace:*
+        version: link:../conduit-runner-aider
+      '@conduit-harness/conduit-runner-claude-cli':
+        specifier: workspace:*
+        version: link:../conduit-runner-claude-cli
+      '@conduit-harness/conduit-runner-codex-cli':
+        specifier: workspace:*
+        version: link:../conduit-runner-codex-cli
+      '@conduit-harness/conduit-tracker-github':
+        specifier: workspace:*
+        version: link:../conduit-tracker-github
+      '@conduit-harness/conduit-tracker-gitlab':
+        specifier: workspace:*
+        version: link:../conduit-tracker-gitlab
+      '@conduit-harness/conduit-tracker-jira':
+        specifier: workspace:*
+        version: link:../conduit-tracker-jira
+      '@conduit-harness/conduit-tracker-linear':
+        specifier: workspace:*
+        version: link:../conduit-tracker-linear
       '@types/node':
         specifier: latest
         version: 25.6.0

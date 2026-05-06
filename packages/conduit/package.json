@@ -48,6 +48,13 @@
     "zod": "latest"
   },
   "devDependencies": {
+    "@conduit-harness/conduit-runner-aider": "workspace:*",
+    "@conduit-harness/conduit-runner-claude-cli": "workspace:*",
+    "@conduit-harness/conduit-runner-codex-cli": "workspace:*",
+    "@conduit-harness/conduit-tracker-github": "workspace:*",
+    "@conduit-harness/conduit-tracker-gitlab": "workspace:*",
+    "@conduit-harness/conduit-tracker-jira": "workspace:*",
+    "@conduit-harness/conduit-tracker-linear": "workspace:*",
     "@types/node": "latest",
     "tsx": "latest",
     "typescript": "latest",
