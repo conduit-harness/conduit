@@ -1,7 +1,7 @@
-import type { Issue, RunAttempt, ServiceConfig, WorkflowDefinition } from "../domain/types.js";
+import type { Issue, RunAttempt, ServiceConfig, WorkflowDefinition, Workspace } from "../domain/types.js";
 import { Logger } from "../logging/logger.js";
 import type { IssueTracker } from "../tracker/tracker.js";
-import type { AgentRunner } from "../agent/runner.js";
+import type { AgentRunner, AgentResult } from "../agent/runner.js";
 import { GitWorktreeManager } from "../workspace/git-worktree.js";
 import { JsonStateStore } from "../state/json-state.js";
 import { renderPrompt } from "../prompt/render.js";
@@ -19,10 +19,11 @@ export class Orchestrator {
     const claimed = new Set([...state.completedIssueIds, ...state.attempts.filter(a => a.status === "running").map(a => a.issueId)]);
     const dispatchable = candidates.filter(i => !claimed.has(i.id)).sort(sortIssue).slice(0, this.config.agent.maxConcurrentAgents);
     this.logger.info("dispatch candidates selected", { fetched: candidates.length, dispatchable: dispatchable.length, dryRun: !!options.dryRun });
-    for (const issue of dispatchable) {
-      if (options.dryRun) { this.logger.info("dry-run would dispatch", { issue: issue.identifier }); continue; }
-      await this.dispatch(issue);
+    if (options.dryRun) {
+      for (const issue of dispatchable) this.logger.info("dry-run would dispatch", { issue: issue.identifier });
+      return;
     }
+    await Promise.all(dispatchable.map(issue => this.dispatch(issue)));
   }
   private async dispatch(issue: Issue) {
     const prior = (await this.state.load()).attempts.filter(a => a.issueId === issue.id).length;
@@ -33,15 +34,41 @@ export class Orchestrator {
     const prompt = renderPrompt(this.workflow.promptTemplate, { issue, workspace, attempt, config: this.config });
     this.logger.info("agent starting", { issue: issue.identifier, attempt: attemptNo, workspace: workspace.path });
     this.logger.info("llm request sent", { issue: issue.identifier, promptChars: prompt.length });
+    const startTime = Date.now();
     const result = await this.agent.run(attempt, prompt);
-    this.logger.info("llm response received", { issue: issue.identifier, status: result.status, outputChars: result.output.length });
+    const duration = Date.now() - startTime;
+    const log = result.fullLog ?? result.output;
+    this.logger.info("llm response received", { issue: issue.identifier, status: result.status, outputChars: log.length });
     const finalAttempt: RunAttempt = { ...attempt, status: result.status, finishedAt: new Date().toISOString() };
     if (result.error) finalAttempt.error = result.error;
     await this.state.appendAttempt(finalAttempt);
     const event = result.status === "succeeded" ? "on_success" : "on_terminal_failure";
-    await this.safeWrite(event, issue, `Conduit attempt ${attemptNo} ${result.status}.${result.error ? ` Error: ${result.error}` : ""}\n\nOutput:\n${result.output.slice(-4000)}`);
+    const comment = this.composeComment(attemptNo, result, workspace, duration);
+    await this.safeWrite(event, issue, comment);
     this.logger.info("agent finished", { issue: issue.identifier, status: result.status, error: result.error });
   }
+
+  private composeComment(attemptNo: number, result: AgentResult, workspace: Workspace, durationMs: number): string {
+    const statusEmoji = result.status === "succeeded" ? "✅" : result.status === "timed_out" ? "⏱️" : "❌";
+    const durationSec = (durationMs / 1000).toFixed(1);
+    let body = `${statusEmoji} Conduit attempt ${attemptNo} ${result.status}.`;
+    body += `\nBranch: \`${workspace.branchName}\``;
+    body += `\nDuration: ${durationSec}s`;
+    if (result.usage) {
+      body += `\nInput tokens: ${result.usage.inputTokens}`;
+      body += `\nOutput tokens: ${result.usage.outputTokens}`;
+      if (result.usage.cacheCreationInputTokens > 0) body += `\nCache creation tokens: ${result.usage.cacheCreationInputTokens}`;
+      if (result.usage.cacheReadInputTokens > 0) body += `\nCache read tokens: ${result.usage.cacheReadInputTokens}`;
+    }
+    if (result.summary) body += `\n\n${result.summary}`;
+    if (result.error) body += `\n\n**Error:** ${result.error}`;
+    const log = result.fullLog ?? result.output;
+    if (log.length > 0) {
+      body += `\n\n<details><summary>Full log</summary>\n\n\`\`\`\n${log.slice(-4000)}\n\`\`\`\n</details>`;
+    }
+    return body;
+  }
+
   private async safeWrite(event: "on_start" | "on_success" | "on_failure" | "on_terminal_failure", issue: Issue, body: string) {
     try { await this.tracker.applyWrite(event, issue, body); } catch (error) { this.logger.warn("tracker write failed", { event, issue: issue.identifier, error: error instanceof Error ? error.message : String(error) }); }
   }
