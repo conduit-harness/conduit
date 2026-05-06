@@ -47,7 +47,7 @@ function optionalProps<T extends Record<string, unknown>>(obj: T): T { return Ob
 function expandHome(value: string): string { return value === "~" ? os.homedir() : value.startsWith("~/") || value.startsWith(`~${path.sep}`) ? path.join(os.homedir(), value.slice(2)) : value; }
 function resolveConfiguredPath(repoPath: string, value: string): string { return path.resolve(repoPath, expandHome(value)); }
 function resolveRawEnvRefs(raw: Record<string, unknown>): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, typeof v === "string" && v.startsWith("$") ? process.env[v.slice(1)] ?? v : v]));
+  return Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, typeof v === "string" ? v.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name: string) => process.env[name] ?? `$${name}`) : v]));
 }
 
 export function buildConfig(workflow: WorkflowDefinition, repoPath: string, overrides: { stateRoot?: string } = {}): ServiceConfig {
