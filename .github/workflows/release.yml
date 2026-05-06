@@ -37,6 +37,14 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
+      - name: Determine if pre-release
+        run: |
+          if [[ "$VERSION" == *-* ]]; then
+            echo "PRERELEASE=true" >> $GITHUB_ENV
+          else
+            echo "PRERELEASE=false" >> $GITHUB_ENV
+          fi
+
       - name: Verify package versions match input
         run: |
           for pkg in packages/*/package.json; do
@@ -144,6 +152,21 @@ jobs:
             fi
           done
           exit $failed
+
+      - name: Drop implicit 'latest' on first-publish pre-releases
+        if: env.PRERELEASE == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          for dir in packages/*/; do
+            [ -f "${dir}package.json" ] || continue
+            pkg=$(node -p "require('./${dir}package.json').name")
+            latest=$(npm view "${pkg}" dist-tags.latest 2>/dev/null || echo "")
+            if [ "$latest" = "$VERSION" ]; then
+              echo "Removing implicit 'latest' tag from ${pkg} (was set to ${VERSION} on first publish)"
+              npm dist-tag rm "${pkg}" latest || true
+            fi
+          done
 
       - name: Configure git
         run: |
