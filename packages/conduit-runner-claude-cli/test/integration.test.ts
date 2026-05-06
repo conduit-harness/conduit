@@ -31,6 +31,12 @@ function makeAttempt(): RunAttempt {
   };
 }
 
+describe("claude-cli runner preflight", () => {
+  it("throws when the configured binary is not on PATH", () => {
+    expect(() => new ClaudeCliRunner(makeConfig({ command: "no-such-binary-xyz123" }))).toThrow(/was not found on PATH/);
+  });
+});
+
 describe("claude-cli runner integration", () => {
   it("returns succeeded with stdout when the command exits 0", async () => {
     const runner = new ClaudeCliRunner(makeConfig({ command: "cat" }));
