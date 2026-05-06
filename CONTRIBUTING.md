@@ -106,7 +106,7 @@ When changing a tracker plugin:
 
 Runner plugins live in `packages/conduit-runner-*`. Each exports a default class implementing `AgentRunner`.
 
-Runner packages follow the naming convention `conduit-runner-{vendor}-{mechanism}`, where mechanism is `api` (HTTP) or `cli` (subprocess). For example: `conduit-runner-openai-api`, `conduit-runner-claude-cli`. The `agent.kind` in workflow YAML matches the suffix after `conduit-runner-` (e.g. `kind: openai-api`). Tracker packages follow `conduit-tracker-{vendor}` — mechanism is omitted since trackers are always HTTP API.
+Runner packages follow the naming convention `conduit-runner-{vendor}-{mechanism}`, where mechanism is `cli` (subprocess wrapping a coding-agent harness). For example: `conduit-runner-claude-cli`, `conduit-runner-codex-cli`. The `agent.kind` in workflow YAML matches the suffix after `conduit-runner-` (e.g. `kind: claude-cli`). Tracker packages follow `conduit-tracker-{vendor}` — mechanism is omitted since trackers are always HTTP API.
 
 When changing a runner plugin:
 

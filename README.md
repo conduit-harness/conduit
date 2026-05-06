@@ -7,6 +7,8 @@
 
 Conduit is an agentic coding scheduler. It reads issues from a tracker, creates an isolated git worktree for each, renders a prompt, and hands off to a coding-agent harness (Claude Code, Codex CLI, or Aider) inside that worktree — optionally writing results back to the tracker. Conduit handles dispatch, isolation, and prompting; the harness handles the agent loop.
 
+This implementation follows the [Symphony service specification](https://conduit.tomhofman.dev/reference/spec/) — a language-agnostic spec for issue-to-code-agent dispatch services. Conduit is the reference TypeScript implementation.
+
 ## How it works
 
 Conduit runs a continuous loop:
@@ -43,7 +45,6 @@ Conduit uses a plugin model — install the tracker and runner you need alongsid
 | Claude CLI  | `claude-cli` | CLI subprocess — requires `claude` (Claude Code) installed | `npm install -g @conduit-harness/conduit-runner-claude-cli` |
 | Codex CLI   | `codex-cli`  | CLI subprocess — requires `codex` (OpenAI Codex CLI) installed | `npm install -g @conduit-harness/conduit-runner-codex-cli` |
 | Aider       | `aider`      | CLI subprocess — requires `aider` installed | `npm install -g @conduit-harness/conduit-runner-aider` |
-| OpenAI API *(deprecated)* | `openai-api` | HTTP — chat-completions endpoint, no harness behind it. Kept for compatibility; emits a runtime warning. Prefer one of the CLI runners above. | `npm install -g @conduit-harness/conduit-runner-openai-api` |
 
 Each plugin package includes an example workflow under its own `examples/` directory.
 

@@ -17,7 +17,6 @@ body:
         - "Runner: claude-cli"
         - "Runner: codex-cli"
         - "Runner: aider"
-        - "Runner: openai-api"
         - "Runner: new plugin"
         - "Tracker: github"
         - "Tracker: gitlab"

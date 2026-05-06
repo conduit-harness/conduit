@@ -9,11 +9,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 - `license` field on every `packages/*/package.json`.
 - README badges (npm version, weekly downloads, CI status, license).
+- README intro now mentions Conduit's lineage from the Symphony service specification.
 - `CHANGELOG.md` (this file).
 - `DEVELOPMENT.md` describing the development cadence and pre-release flow.
 
 ### Changed
 - Abandoned the `0.0.2-rc2` release cycle in favor of going directly to `0.1.0`.
+
+### Removed
+- `@conduit-harness/conduit-runner-openai-api` — the package called a chat-completions endpoint directly without an agentic harness, so it did not satisfy the runner contract. Use `claude-cli`, `codex-cli`, or `aider` instead. The deprecation warning, the `DEPRECATED_KINDS` map in `packages/conduit/src/cli/index.ts`, the openai-api docs page, the `claude-api` and `openai-api` options in the setup wizard, the `gitlab-openai.md` example, and the `examples/docker-ollama-github/` e2e harness (and its `e2e-smoke.yml` workflow) are all gone with it. A replacement smoke test using the aider runner against Ollama is tracked separately.
 
 ## [0.0.1] — 2026-04-27
 
