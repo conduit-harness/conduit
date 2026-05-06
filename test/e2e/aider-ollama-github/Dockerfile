@@ -8,6 +8,7 @@ RUN corepack enable
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
 COPY packages ./packages
 RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @conduit-harness/conduit build
 RUN pnpm -r build
 RUN mkdir -p /tarballs && \
     cd packages/conduit && pnpm pack --pack-destination /tarballs && \
