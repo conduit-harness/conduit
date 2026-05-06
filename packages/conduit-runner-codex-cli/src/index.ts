@@ -1,4 +1,7 @@
 import { spawn } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import type { AgentResult, AgentRunner, RunAttempt, ServiceConfig } from "@conduit-harness/conduit";
 
 function str(v: unknown, fallback: string): string { return typeof v === "string" && v.length > 0 ? v : fallback; }
@@ -15,6 +18,30 @@ export default class CodexCliRunner implements AgentRunner {
     this.command = str(raw.command, "codex");
     this.turnTimeoutMs = num(raw.turn_timeout_ms, 3600000);
     this.stallTimeoutMs = num(raw.stall_timeout_ms, 300000);
+  }
+
+  async preflightAuth(): Promise<void> {
+    const credentialsPath = path.join(os.homedir(), ".codex", "credentials.json");
+    if (!existsSync(credentialsPath)) {
+      throw new Error(
+        `codex-cli runner: authentication required.\n\n` +
+        `Run the following to authenticate:\n` +
+        `  codex login\n`
+      );
+    }
+    try {
+      const content = readFileSync(credentialsPath, "utf8");
+      const creds = JSON.parse(content) as Record<string, unknown>;
+      if (!creds || typeof creds !== "object" || Object.keys(creds).length === 0) {
+        throw new Error("credentials file is empty");
+      }
+    } catch {
+      throw new Error(
+        `codex-cli runner: authentication required.\n\n` +
+        `Run the following to authenticate:\n` +
+        `  codex login\n`
+      );
+    }
   }
 
   async run(attempt: RunAttempt, prompt: string): Promise<AgentResult> {
