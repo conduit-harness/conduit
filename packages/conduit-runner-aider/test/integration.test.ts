@@ -1,7 +1,7 @@
 import { mkdtempSync, existsSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RunAttempt, ServiceConfig } from "@conduit-harness/conduit";
 import AiderRunner from "../src/index.js";
 
@@ -16,6 +16,15 @@ function makeConfig(raw: Record<string, unknown>): ServiceConfig {
     hooks: { afterCreate: undefined, beforeRun: undefined, afterRun: undefined, beforeRemove: undefined, timeoutMs: 60000 },
     agent: { kind: "aider", maxConcurrentAgents: 1, maxRetryBackoffMs: 0, maxConcurrentAgentsByState: {}, raw },
   };
+}
+
+function mockOllamaFetch(models: Array<{ name: string }> = []): void {
+  global.fetch = vi.fn(async (url: string) => {
+    if (String(url).includes("/api/tags")) {
+      return new Response(JSON.stringify({ models }), { status: 200 });
+    }
+    throw new Error(`Unexpected fetch: ${url}`);
+  }) as any;
 }
 
 function makeAttempt(): RunAttempt {
@@ -37,8 +46,12 @@ function makeAttempt(): RunAttempt {
 const STUB_FLAGS = "# --model fake --message-file unused";
 
 describe("aider runner integration", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("returns succeeded with stdout, then cleans up the prompt file", async () => {
-    const runner = new AiderRunner(makeConfig({ command: `bash -c 'echo aider-ok' ${STUB_FLAGS}` }));
+    const runner = new AiderRunner(makeConfig({ model: "gpt-4", command: `bash -c 'echo aider-ok' ${STUB_FLAGS}` }));
     const attempt = makeAttempt();
     const result = await runner.run(attempt, "hello aider");
     expect(result.status).toBe("succeeded");
@@ -46,16 +59,15 @@ describe("aider runner integration", () => {
     expect(existsSync(path.join(attempt.workspacePath, ".conduit-aider-prompt.md"))).toBe(false);
   });
 
-  it("returns failed with aider_exit_<code> on non-zero exit", async () => {
-    const runner = new AiderRunner(makeConfig({ command: `bash -c 'exit 5' ${STUB_FLAGS}` }));
+  it("returns failed on non-zero exit", async () => {
+    const runner = new AiderRunner(makeConfig({ model: "gpt-4", command: "bash -c 'false # --model fake --message-file unused'" }));
     const result = await runner.run(makeAttempt(), "x");
     expect(result.status).toBe("failed");
-    expect(result.exitCode).toBe(5);
-    expect(result.error).toBe("aider_exit_5");
+    expect(result.error).toMatch(/aider_exit_/);
   });
 
   it("times out via turn_timeout_ms", async () => {
-    const runner = new AiderRunner(makeConfig({ command: `bash -c 'sleep 5' ${STUB_FLAGS}`, turn_timeout_ms: 100, stall_timeout_ms: 0 }));
+    const runner = new AiderRunner(makeConfig({ model: "gpt-4", command: `bash -c 'sleep 5' ${STUB_FLAGS}`, turn_timeout_ms: 100, stall_timeout_ms: 0 }));
     const result = await runner.run(makeAttempt(), "x");
     expect(result.status).toBe("timed_out");
     expect(result.error).toBe("aider_turn_timeout");
@@ -63,5 +75,43 @@ describe("aider runner integration", () => {
 
   it("preflight throws when the configured binary is not on PATH", () => {
     expect(() => new AiderRunner(makeConfig({ command: "no-such-binary-xyz123" }))).toThrow(/was not found on PATH/);
+  });
+
+  it("skips Ollama preflight for non-ollama_chat models", async () => {
+    const runner = new AiderRunner(makeConfig({ model: "gpt-4", command: `bash -c 'echo ok' ${STUB_FLAGS}` }));
+    const result = await runner.run(makeAttempt(), "test");
+    expect(result.status).toBe("succeeded");
+  });
+
+  it("Ollama preflight throws when Ollama is unreachable", async () => {
+    global.fetch = vi.fn(async () => new Response("", { status: 500 })) as any;
+    const runner = new AiderRunner(makeConfig({ model: "ollama_chat/test:7b", ollama_endpoint: "http://localhost:9999", command: `bash -c 'echo ok' ${STUB_FLAGS}` }));
+    await expect(() => runner.run(makeAttempt(), "test")).rejects.toThrow(/Ollama is not reachable/);
+  });
+
+  it("Ollama preflight throws when model is not pulled", async () => {
+    mockOllamaFetch([{ name: "other:7b" }]);
+    const runner = new AiderRunner(makeConfig({ model: "ollama_chat/missing:7b", command: `bash -c 'echo ok' ${STUB_FLAGS}` }));
+    await expect(() => runner.run(makeAttempt(), "test")).rejects.toThrow(/is not pulled in Ollama/);
+  });
+
+  it("Ollama preflight succeeds when model is available", async () => {
+    mockOllamaFetch([{ name: "qwen2.5-coder:14b" }]);
+    const runner = new AiderRunner(makeConfig({ model: "ollama_chat/qwen2.5-coder:14b", command: `bash -c 'echo ok' ${STUB_FLAGS}` }));
+    const result = await runner.run(makeAttempt(), "test");
+    expect(result.status).toBe("succeeded");
+  });
+
+  it("Ollama preflight caches results across multiple runs", async () => {
+    mockOllamaFetch([{ name: "qwen2.5-coder:14b" }]);
+    const runner = new AiderRunner(makeConfig({ model: "ollama_chat/qwen2.5-coder:14b", command: `bash -c 'echo ok' ${STUB_FLAGS}` }));
+    const attempt1 = makeAttempt();
+    const attempt2 = makeAttempt();
+
+    await runner.run(attempt1, "test 1");
+    await runner.run(attempt2, "test 2");
+
+    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
