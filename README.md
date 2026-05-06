@@ -38,6 +38,7 @@ Conduit uses a plugin model — install the tracker and runner you need alongsid
 | Jira   | `jira`   | `npm install -g @conduit-harness/conduit-tracker-jira` |
 | GitLab | `gitlab` | `npm install -g @conduit-harness/conduit-tracker-gitlab` |
 | Azure DevOps | `azuredevops` | `npm install -g @conduit-harness/conduit-tracker-azuredevops` |
+| Forgejo / Gitea | `forgejo` | `npm install -g @conduit-harness/conduit-tracker-forgejo` |
 
 ### Runners
 

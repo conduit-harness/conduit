@@ -1,0 +1,22 @@
+{
+  "name": "@conduit-harness/conduit-tracker-forgejo",
+  "version": "0.0.1",
+  "description": "Conduit tracker plugin for Forgejo / Gitea Issues",
+  "type": "module",
+  "exports": {
+    ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "publishConfig": { "access": "public" },
+  "engines": { "node": ">=24.0.0" },
+  "peerDependencies": { "@conduit-harness/conduit": ">=0.0.1" },
+  "devDependencies": {
+    "@conduit-harness/conduit": "workspace:*",
+    "@types/node": "latest",
+    "typescript": "latest"
+  }
+}

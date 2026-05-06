@@ -51,6 +51,7 @@ Trackers and runners are separate npm packages, loaded by `kind`:
 - `tracker.kind: jira` → `@conduit-harness/conduit-tracker-jira`
 - `tracker.kind: gitlab` → `@conduit-harness/conduit-tracker-gitlab`
 - `tracker.kind: azuredevops` → `@conduit-harness/conduit-tracker-azuredevops`
+- `tracker.kind: forgejo` → `@conduit-harness/conduit-tracker-forgejo` (also covers Gitea)
 - `agent.kind: claude-cli` → `@conduit-harness/conduit-runner-claude-cli`
 - `agent.kind: codex-cli` → `@conduit-harness/conduit-runner-codex-cli`
 - `agent.kind: aider` → `@conduit-harness/conduit-runner-aider`
