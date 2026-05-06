@@ -167,7 +167,7 @@ export default class AiderRunner implements AgentRunner {
 }
 
 function shellQuote(value: string): string {
-  if (/^[A-Za-z0-9_./:@\-]+$/.test(value)) return value;
+  if (/^[A-Za-z0-9_./:@\\-]+$/.test(value)) return value;
   if (process.platform === "win32") return `'${value.replace(/'/g, "''")}'`;
-  return `'${value.replace(/'/g, "'\''")}'`;
+  return `'${value.replace(/'/g, "'\\''")}'`;
 }
