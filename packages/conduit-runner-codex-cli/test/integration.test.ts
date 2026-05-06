@@ -33,10 +33,16 @@ function makeAttempt(): RunAttempt {
 
 describe("codex-cli runner integration", () => {
   it("returns succeeded with stdout when the command exits 0", async () => {
-    const runner = new CodexCliRunner(makeConfig({ command: "cat" }));
+    // The runner appends --json to commands that don't already include it.
+    // We use 'bash -c SCRIPT --json' so --json becomes $0 (ignored by bash)
+    // and the script outputs a codex-style JSONL item that parseJsonlOutput can extract.
+    const jsonLine = '{"type":"item.completed","item":{"type":"agent_message","text":"hello codex"}}';
+    const runner = new CodexCliRunner(makeConfig({
+      command: `bash -c 'cat >/dev/null; echo '"'"'${jsonLine}'"'"'' --json`,
+    }));
     const result = await runner.run(makeAttempt(), "hello codex");
     expect(result.status).toBe("succeeded");
-    expect(result.output).toContain("hello codex");
+    expect(result.output).toBe("hello codex");
     expect(result.exitCode).toBe(0);
   });
 
