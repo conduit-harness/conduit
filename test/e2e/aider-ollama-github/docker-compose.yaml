@@ -29,7 +29,7 @@ services:
 
   conduit:
     build:
-      context: ../..
+      context: ../../..
       dockerfile: test/e2e/aider-ollama-github/Dockerfile
     depends_on:
       ollama:
