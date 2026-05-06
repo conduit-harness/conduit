@@ -1,5 +1,10 @@
 # Conduit
 
+[![npm version](https://img.shields.io/npm/v/@conduit-harness/conduit.svg)](https://www.npmjs.com/package/@conduit-harness/conduit)
+[![weekly downloads](https://img.shields.io/npm/dw/@conduit-harness/conduit.svg)](https://www.npmjs.com/package/@conduit-harness/conduit)
+[![CI](https://github.com/conduit-harness/conduit/actions/workflows/build-test.yml/badge.svg)](https://github.com/conduit-harness/conduit/actions/workflows/build-test.yml)
+[![license](https://img.shields.io/npm/l/@conduit-harness/conduit.svg)](LICENSE)
+
 Conduit is an agentic coding scheduler. It reads issues from a tracker, creates an isolated git worktree for each, renders a prompt, and hands off to a coding-agent harness (Claude Code, Codex CLI, or Aider) inside that worktree — optionally writing results back to the tracker. Conduit handles dispatch, isolation, and prompting; the harness handles the agent loop.
 
 ## How it works
@@ -121,3 +126,5 @@ Full docs, package guides, and the API reference live at **<https://conduit.tomh
 - [Status](https://conduit.tomhofman.dev/reference/status/) — current capabilities and known limitations
 - [Symphony specification](https://conduit.tomhofman.dev/reference/spec/) — the upstream spec this implementation follows
 - [CONTRIBUTING.md](CONTRIBUTING.md) — development setup and contribution guidelines
+- [DEVELOPMENT.md](DEVELOPMENT.md) — trunk model, pre-release cadence, patch release flow
+- [CHANGELOG.md](CHANGELOG.md) — release history
