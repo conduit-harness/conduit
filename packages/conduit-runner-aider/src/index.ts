@@ -1,12 +1,33 @@
 import { spawn, spawnSync } from "node:child_process";
 import { writeFile, unlink } from "node:fs/promises";
 import { join } from "node:path";
-import type { AgentResult, AgentRunner, RunAttempt, ServiceConfig } from "@conduit-harness/conduit";
+import type { AgentResult, AgentRunner, AgentUsage, RunAttempt, ServiceConfig } from "@conduit-harness/conduit";
 
 function str(v: unknown, fallback: string): string { return typeof v === "string" && v.length > 0 ? v : fallback; }
 function maybeStr(v: unknown): string | undefined { return typeof v === "string" && v.length > 0 ? v : undefined; }
 function num(v: unknown, fallback: number): number { const n = typeof v === "string" ? Number.parseInt(v, 10) : typeof v === "number" ? v : NaN; return Number.isFinite(n) ? n : fallback; }
 function nativeShell(): [string, string] { return process.platform === "win32" ? ["powershell", "-Command"] : ["bash", "-lc"]; }
+
+function parseShorthandNumber(s: string): number | undefined {
+  const match = /^([\d.]+)([kmb])?$/i.exec(s.trim());
+  if (!match) return undefined;
+  const base = Number.parseFloat(match[1] ?? "");
+  if (!Number.isFinite(base)) return undefined;
+  const suffix = (match[2] ?? "").toLowerCase();
+  const multipliers: Record<string, number> = { k: 1000, m: 1000000, b: 1000000000 };
+  return Math.round(base * (multipliers[suffix] ?? 1));
+}
+
+function parseAiderTokenUsage(output: string): AgentUsage | undefined {
+  const tokenLine = output.split("\n").find(line => line.includes("Tokens:") && (line.includes("sent") || line.includes("received")));
+  if (!tokenLine) return undefined;
+  const sentMatch = /(\d+\.?\d*[kmb]?)\s*(?:tokens?)?\s*sent/i.exec(tokenLine);
+  const receivedMatch = /(\d+\.?\d*[kmb]?)\s*(?:tokens?)?\s*received/i.exec(tokenLine);
+  const inputTokens = sentMatch ? (parseShorthandNumber(sentMatch[1] ?? "") ?? 0) : 0;
+  const outputTokens = receivedMatch ? (parseShorthandNumber(receivedMatch[1] ?? "") ?? 0) : 0;
+  if (inputTokens === 0 && outputTokens === 0) return undefined;
+  return { inputTokens, outputTokens, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 };
+}
 
 export default class AiderRunner implements AgentRunner {
   private readonly command: string;
@@ -124,6 +145,10 @@ export default class AiderRunner implements AgentRunner {
         const r: AgentResult = { status: code === 0 ? "succeeded" : "failed", output };
         if (code !== null) r.exitCode = code;
         if (code !== 0) r.error = `aider_exit_${code}`;
+        if (code === 0) {
+          const usage = parseAiderTokenUsage(output);
+          if (usage !== undefined) r.usage = usage;
+        }
         finish(r);
       });
       bumpStall();
