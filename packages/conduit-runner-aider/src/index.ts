@@ -16,6 +16,7 @@ export default class AiderRunner implements AgentRunner {
   private readonly extraArgs: string;
   private readonly turnTimeoutMs: number;
   private readonly stallTimeoutMs: number;
+  private ollamaPreflight: boolean | Error | undefined;
 
   constructor(config: ServiceConfig) {
     const raw = config.agent.raw;
@@ -49,7 +50,61 @@ export default class AiderRunner implements AgentRunner {
     }
   }
 
+  private async preflightOllama(): Promise<void> {
+    if (this.ollamaPreflight !== undefined) {
+      if (this.ollamaPreflight instanceof Error) throw this.ollamaPreflight;
+      return;
+    }
+
+    if (!this.model.startsWith("ollama_chat/")) {
+      this.ollamaPreflight = true;
+      return;
+    }
+
+    try {
+      const url = `${this.ollamaEndpoint}/api/tags`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        const error = new Error(
+          `aider runner: Ollama is not reachable at ${this.ollamaEndpoint}.\n\n` +
+          `- Is the Ollama daemon running? Start it with: \`ollama serve\` (or open the Ollama app)\n` +
+          `- Is \`ollama_endpoint\` correct in your workflow?`,
+        );
+        this.ollamaPreflight = error;
+        throw error;
+      }
+
+      const data = await response.json() as { models?: Array<{ name: string }> };
+      const models = data.models ?? [];
+      const modelName = this.model.slice("ollama_chat/".length);
+      const found = models.some(m => m.name === modelName);
+
+      if (!found) {
+        const available = models.map(m => m.name).join(", ");
+        const error = new Error(
+          `aider runner: model '${modelName}' is not pulled in Ollama.\n\n` +
+          `Pull it with: ollama pull ${modelName}\n\n` +
+          `Currently available: ${available || "(none)"}`,
+        );
+        this.ollamaPreflight = error;
+        throw error;
+      }
+
+      this.ollamaPreflight = true;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      if (this.ollamaPreflight === undefined) this.ollamaPreflight = error;
+      throw error;
+    }
+  }
+
   async run(attempt: RunAttempt, prompt: string): Promise<AgentResult> {
+    await this.preflightOllama();
     const promptFile = join(attempt.workspacePath, ".conduit-aider-prompt.md");
     await writeFile(promptFile, prompt, "utf8");
     const fullCommand = this.buildCommand(promptFile);
