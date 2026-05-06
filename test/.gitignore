@@ -1,0 +1,4 @@
+local-packages/*.tgz
+*/node_modules/
+*/repo/
+*/.env

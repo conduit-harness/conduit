@@ -1,0 +1,16 @@
+{
+  "name": "test-codex-github",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "validate": "conduit validate --repo ./repo --workflow ../.conduit/workflow.md --env ../.env",
+    "once": "conduit once --repo ./repo --workflow ../.conduit/workflow.md --env ../.env",
+    "start": "conduit start --repo ./repo --workflow ../.conduit/workflow.md --env ../.env",
+    "reset": "cd repo; git worktree prune; git branch --list 'conduit/*' | ForEach-Object { git branch -D $_.Trim() }; Remove-Item -Recurse -Force .conduit -ErrorAction SilentlyContinue"
+  },
+  "dependencies": {
+    "@conduit-harness/conduit": "file:../local-packages/conduit-harness-conduit-0.0.2-rc2.tgz",
+    "@conduit-harness/conduit-runner-codex-cli": "file:../local-packages/conduit-harness-conduit-runner-codex-cli-0.0.2-rc2.tgz",
+    "@conduit-harness/conduit-tracker-github": "file:../local-packages/conduit-harness-conduit-tracker-github-0.0.2-rc2.tgz"
+  }
+}
