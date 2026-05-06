@@ -105,6 +105,18 @@ importers:
         specifier: '>=0.0.2-rc2'
         version: 0.0.2-rc2
 
+  packages/conduit-tracker-azuredevops:
+    devDependencies:
+      '@conduit-harness/conduit':
+        specifier: workspace:*
+        version: link:../conduit
+      '@types/node':
+        specifier: latest
+        version: 25.6.0
+      typescript:
+        specifier: latest
+        version: 6.0.3
+
   packages/conduit-tracker-github:
     devDependencies:
       '@conduit-harness/conduit':

@@ -7,7 +7,7 @@ Conduit is an early implementation of the [Symphony specification](/reference/sp
 
 ## Current capabilities
 
-- Linear, GitHub Issues, Jira, and GitLab issue tracking (via separate plugin packages)
+- Linear, GitHub Issues, Jira, GitLab, and Azure DevOps issue tracking (via separate plugin packages)
 - Team-scoped or project-scoped issue selection
 - Optional tracker comments and state transitions per lifecycle event
 - Label and state filtering
