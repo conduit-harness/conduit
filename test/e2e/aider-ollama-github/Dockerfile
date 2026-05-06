@@ -19,7 +19,7 @@ FROM node:24-bookworm-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git ca-certificates curl python3 python3-pip \
     && rm -rf /var/lib/apt/lists/*
-RUN pip3 install --no-cache-dir aider-chat
+RUN pip3 install --no-cache-dir --break-system-packages aider-chat
 COPY --from=builder /tarballs/*.tgz /tmp/tarballs/
 RUN npm install -g /tmp/tarballs/*.tgz && rm -rf /tmp/tarballs
 WORKDIR /app
