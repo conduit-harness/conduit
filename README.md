@@ -13,7 +13,7 @@ This implementation follows the [Symphony service specification](https://conduit
 
 Conduit runs a continuous loop:
 
-- Poll tracker for issues matching active states and labels (Linear / GitHub / Jira / GitLab / Azure DevOps)
+- Poll tracker for issues matching active states and labels (Linear / GitHub / Jira / GitLab / Azure DevOps / Forgejo)
 - Per eligible issue:
   - Create isolated git worktree (`.conduit/workspaces/<issue-id>`)
   - Render prompt from `workflow.md` template + issue context

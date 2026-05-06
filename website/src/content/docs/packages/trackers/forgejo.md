@@ -3,10 +3,6 @@ title: Forgejo / Gitea tracker
 description: Read Forgejo or Gitea issues and optionally post comments or close/reopen issues.
 ---
 
-:::caution[Coming soon]
-This package is not yet published. Only the [GitHub tracker](/packages/trackers/github/) is available in 0.0.1.
-:::
-
 `@conduit-harness/conduit-tracker-forgejo` reads issues from a self-hosted Forgejo or Gitea repository and optionally writes back via comments and open/closed transitions. The two forges share the same REST API surface, so a single plugin works for both.
 
 ## Install
