@@ -1,0 +1,48 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  mock-github:
+    image: node:24-alpine
+    working_dir: /srv
+    volumes:
+      - ./mock-github:/srv:ro
+    command: ["node", "/srv/server.mjs"]
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - require("http").get("http://127.0.0.1:3000/__health",r=>process.exit(r.statusCode===200?0:1)).on("error",()=>process.exit(1))
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  conduit:
+    build:
+      context: ../..
+      dockerfile: test/e2e/aider-ollama-github/Dockerfile
+    depends_on:
+      ollama:
+        condition: service_healthy
+      mock-github:
+        condition: service_healthy
+    environment:
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:0.5b}
+      OLLAMA_BASE: http://ollama:11434
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-mock-token}
+    volumes:
+      - conduit-repo:/repo
+
+volumes:
+  ollama-models:
+  conduit-repo:
