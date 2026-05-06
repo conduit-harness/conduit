@@ -50,13 +50,13 @@ export default class CodexCliRunner implements AgentRunner {
       const child = spawn(shell, [flag, this.command], { cwd: attempt.workspacePath, env: process.env, stdio: ["pipe", "pipe", "pipe"] });
       let output = ""; let settled = false; let stallTimer: NodeJS.Timeout | undefined;
       const finish = (result: AgentResult) => { if (settled) return; settled = true; clearTimeout(turnTimer); if (stallTimer) clearTimeout(stallTimer); resolve(result); };
-      const bumpStall = () => { if (this.stallTimeoutMs <= 0) return; if (stallTimer) clearTimeout(stallTimer); stallTimer = setTimeout(() => { child.kill("SIGTERM"); finish({ status: "timed_out", output, error: "codex_stall_timeout" }); }, this.stallTimeoutMs); };
-      const turnTimer = setTimeout(() => { child.kill("SIGTERM"); finish({ status: "timed_out", output, error: "codex_turn_timeout" }); }, this.turnTimeoutMs);
+      const bumpStall = () => { if (this.stallTimeoutMs <= 0) return; if (stallTimer) clearTimeout(stallTimer); stallTimer = setTimeout(() => { child.kill("SIGTERM"); finish({ status: "timed_out", summary: "", fullLog: output, error: "codex_stall_timeout" }); }, this.stallTimeoutMs); };
+      const turnTimer = setTimeout(() => { child.kill("SIGTERM"); finish({ status: "timed_out", summary: "", fullLog: output, error: "codex_turn_timeout" }); }, this.turnTimeoutMs);
       child.stdout.on("data", d => { output += d.toString(); bumpStall(); });
       child.stderr.on("data", d => { output += d.toString(); bumpStall(); });
-      child.on("error", err => finish({ status: "failed", output, error: err.message }));
+      child.on("error", err => finish({ status: "failed", summary: "", fullLog: output, error: err.message }));
       child.on("close", code => {
-        const result: AgentResult = { status: code === 0 ? "succeeded" : "failed", output };
+        const result: AgentResult = { status: code === 0 ? "succeeded" : "failed", summary: "", fullLog: output };
         if (code !== null) result.exitCode = code;
         if (code !== 0) result.error = `codex_exit_${code}`;
         finish(result);
