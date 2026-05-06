@@ -1,6 +1,7 @@
 import type { RunAttempt } from "../domain/types.js";
 
-export type AgentResult = { status: "succeeded" | "failed" | "timed_out"; exitCode?: number; output: string; error?: string };
+export type AgentUsage = { inputTokens: number; outputTokens: number; cacheCreationInputTokens: number; cacheReadInputTokens: number };
+export type AgentResult = { status: "succeeded" | "failed" | "timed_out"; exitCode?: number; output: string; error?: string; summary?: string; usage?: AgentUsage; fullLog?: string };
 export interface AgentRunner { run(attempt: RunAttempt, prompt: string): Promise<AgentResult>; }
 
 export class FakeAgentRunner implements AgentRunner {

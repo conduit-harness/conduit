@@ -1,13 +1,36 @@
 import { spawn, spawnSync } from "node:child_process";
 import { writeFile, unlink } from "node:fs/promises";
 import { join } from "node:path";
-import type { AgentResult, AgentRunner, RunAttempt, ServiceConfig } from "@conduit-harness/conduit";
+import type { AgentResult, AgentRunner, AgentUsage, RunAttempt, ServiceConfig } from "@conduit-harness/conduit";
 
 function str(v: unknown, fallback: string): string { return typeof v === "string" && v.length > 0 ? v : fallback; }
 function num(v: unknown, fallback: number): number { const n = typeof v === "string" ? Number.parseInt(v, 10) : typeof v === "number" ? v : NaN; return Number.isFinite(n) ? n : fallback; }
 function nativeShell(): [string, string] { return process.platform === "win32" ? ["powershell", "-Command"] : ["bash", "-lc"]; }
 
 const PROMPT_FILENAME = ".conduit-claude-prompt.md";
+
+export function parseClaudeJsonOutput(raw: string): { summary?: string; usage?: AgentUsage; fullLog: string } | null {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null) return null;
+    const p = parsed as Record<string, unknown>;
+    const result: { summary?: string; usage?: AgentUsage; fullLog: string } = { fullLog: raw };
+    if (typeof p.result === "string") result.summary = p.result;
+    const rawUsage = p.usage;
+    if (rawUsage !== null && typeof rawUsage === "object") {
+      const u = rawUsage as Record<string, unknown>;
+      result.usage = {
+        inputTokens: num(u.input_tokens, 0),
+        outputTokens: num(u.output_tokens, 0),
+        cacheCreationInputTokens: num(u.cache_creation_input_tokens, 0),
+        cacheReadInputTokens: num(u.cache_read_input_tokens, 0),
+      };
+    }
+    return result;
+  } catch {
+    return null;
+  }
+}
 
 export default class ClaudeCliRunner implements AgentRunner {
   private readonly command: string;
@@ -16,7 +39,7 @@ export default class ClaudeCliRunner implements AgentRunner {
 
   constructor(config: ServiceConfig) {
     const raw = config.agent.raw;
-    this.command = str(raw.command, "claude --dangerously-skip-permissions -p -");
+    this.command = str(raw.command, "claude --dangerously-skip-permissions --output-format json -p -");
     this.turnTimeoutMs = num(raw.turn_timeout_ms, 3600000);
     this.stallTimeoutMs = num(raw.stall_timeout_ms, 300000);
     this.preflight();
@@ -64,6 +87,14 @@ export default class ClaudeCliRunner implements AgentRunner {
         const r: AgentResult = { status: code === 0 ? "succeeded" : "failed", output };
         if (code !== null) r.exitCode = code;
         if (code !== 0) r.error = `claude_exit_${code}`;
+        if (code === 0) {
+          const parsed = parseClaudeJsonOutput(output);
+          if (parsed !== null) {
+            if (parsed.summary !== undefined) r.summary = parsed.summary;
+            if (parsed.usage !== undefined) r.usage = parsed.usage;
+            r.fullLog = parsed.fullLog;
+          }
+        }
         finish(r);
       });
       bumpStall();

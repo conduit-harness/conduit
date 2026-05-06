@@ -4,9 +4,9 @@
   "packageManager": "pnpm@10.10.0",
   "scripts": {
     "build": "pnpm --filter @conduit-harness/conduit build && pnpm -r --filter '!@conduit-harness/conduit' build",
-    "test": "pnpm --filter @conduit-harness/conduit test",
+    "test": "pnpm --filter @conduit-harness/conduit test && pnpm --filter @conduit-harness/conduit-runner-claude-cli test",
     "test:trackers": "pnpm --filter './packages/conduit-tracker-*' test",
     "test:runners": "pnpm --filter './packages/conduit-runner-*' test",
-    "typecheck": "pnpm --filter @conduit-harness/conduit typecheck"
+    "typecheck": "pnpm --filter @conduit-harness/conduit typecheck && pnpm --filter @conduit-harness/conduit-runner-claude-cli typecheck"
   }
 }

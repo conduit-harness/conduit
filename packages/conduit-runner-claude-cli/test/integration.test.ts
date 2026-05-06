@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { RunAttempt, ServiceConfig } from "@conduit-harness/conduit";
-import ClaudeCliRunner from "../src/index.js";
+import ClaudeCliRunner, { parseClaudeJsonOutput } from "../src/index.js";
 
 function makeConfig(raw: Record<string, unknown>): ServiceConfig {
   return {
@@ -30,6 +30,37 @@ function makeAttempt(): RunAttempt {
     status: "running",
   };
 }
+
+describe("parseClaudeJsonOutput", () => {
+  it("parses result and usage from valid JSON", () => {
+    const raw = JSON.stringify({ result: "Task done", usage: { input_tokens: 10, output_tokens: 5, cache_creation_input_tokens: 2, cache_read_input_tokens: 1 } });
+    const parsed = parseClaudeJsonOutput(raw);
+    expect(parsed).not.toBeNull();
+    expect(parsed?.summary).toBe("Task done");
+    expect(parsed?.usage).toEqual({ inputTokens: 10, outputTokens: 5, cacheCreationInputTokens: 2, cacheReadInputTokens: 1 });
+    expect(parsed?.fullLog).toBe(raw);
+  });
+
+  it("returns null for malformed JSON", () => {
+    expect(parseClaudeJsonOutput("not json")).toBeNull();
+    expect(parseClaudeJsonOutput("")).toBeNull();
+    expect(parseClaudeJsonOutput("42")).toBeNull();
+  });
+
+  it("handles JSON without a result field", () => {
+    const raw = JSON.stringify({ usage: { input_tokens: 5, output_tokens: 3, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 } });
+    const parsed = parseClaudeJsonOutput(raw);
+    expect(parsed?.summary).toBeUndefined();
+    expect(parsed?.usage?.inputTokens).toBe(5);
+  });
+
+  it("handles JSON without a usage field", () => {
+    const raw = JSON.stringify({ result: "Hello" });
+    const parsed = parseClaudeJsonOutput(raw);
+    expect(parsed?.summary).toBe("Hello");
+    expect(parsed?.usage).toBeUndefined();
+  });
+});
 
 describe("claude-cli runner preflight", () => {
   it("throws when the configured binary is not on PATH", () => {
