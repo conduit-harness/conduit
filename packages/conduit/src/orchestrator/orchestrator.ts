@@ -16,7 +16,15 @@ export class Orchestrator {
   async tick(options: { dryRun?: boolean } = {}) {
     const candidates = await this.tracker.fetchCandidateIssues();
     const state = await this.state.load();
-    const claimed = new Set([...state.completedIssueIds, ...state.attempts.filter(a => a.status === "running").map(a => a.issueId)]);
+    const candidateIds = new Set(candidates.map(i => i.id));
+    const attemptCountById = new Map<string, number>();
+    for (const a of state.attempts) attemptCountById.set(a.issueId, (attemptCountById.get(a.issueId) ?? 0) + 1);
+    const maxAttempts = this.config.agent.maxAttempts;
+    const claimed = new Set([
+      ...state.completedIssueIds.filter(id => !candidateIds.has(id)),
+      ...(maxAttempts > 0 ? [...attemptCountById.entries()].filter(([, n]) => n >= maxAttempts).map(([id]) => id) : []),
+      ...state.attempts.filter(a => a.status === "running").map(a => a.issueId),
+    ]);
     const dispatchable = candidates.filter(i => !claimed.has(i.id)).sort(sortIssue).slice(0, this.config.agent.maxConcurrentAgents);
     this.logger.info("dispatch candidates selected", { fetched: candidates.length, dispatchable: dispatchable.length, dryRun: !!options.dryRun });
     if (options.dryRun) {

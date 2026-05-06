@@ -79,6 +79,7 @@ export function buildConfig(workflow: WorkflowDefinition, repoPath: string, over
     agent: {
       kind: agentKind,
       maxConcurrentAgents: Math.max(1, intValue(agent.max_concurrent_agents, 10)),
+      maxAttempts: Math.max(0, intValue(agent.max_attempts, 0)),
       maxRetryBackoffMs: intValue(agent.max_retry_backoff_ms, 300000),
       maxConcurrentAgentsByState: maxByState,
       raw: resolveRawEnvRefs(agentSectionRaw),

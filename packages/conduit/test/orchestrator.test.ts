@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import type { Issue, ServiceConfig, RunAttempt, PersistedState, Workspace } from "../src/domain/types.js";
 import type { IssueTracker } from "../src/tracker/tracker.js";
-import type { AgentRunner, AgentResult } from "../src/agent/runner.js";
+import type { AgentRunner } from "../src/agent/runner.js";
 import { Logger } from "../src/logging/logger.js";
 import { Orchestrator } from "../src/orchestrator/orchestrator.js";
 
@@ -26,52 +26,25 @@ class FakeIssueTracker implements IssueTracker {
   private throwOnWrite = false;
   private config: ServiceConfig | null = null;
 
-  setConfig(config: ServiceConfig): void {
-    this.config = config;
-  }
-
-  setCandidateIssues(issues: Issue[]): void {
-    this.candidateIssues = issues;
-  }
-
-  setThrowOnWrite(shouldThrow: boolean): void {
-    this.throwOnWrite = shouldThrow;
-  }
-
-  getWrites(): Array<{ event: string; issueId: string; body: string }> {
-    return this.writes;
-  }
+  setConfig(config: ServiceConfig): void { this.config = config; }
+  setCandidateIssues(issues: Issue[]): void { this.candidateIssues = issues; }
+  setThrowOnWrite(shouldThrow: boolean): void { this.throwOnWrite = shouldThrow; }
+  getWrites(): Array<{ event: string; issueId: string; body: string }> { return this.writes; }
 
   async fetchCandidateIssues(): Promise<Issue[]> {
     if (!this.config) return this.candidateIssues;
-
-    // Filter by required labels and excluded labels
     return this.candidateIssues.filter(issue => {
       const issueLabels = issue.labels.map(l => l.toLowerCase());
-
-      // Check required labels
-      const hasAllRequired = this.config!.tracker.requiredLabels.every(req =>
-        issueLabels.includes(req.toLowerCase())
-      );
+      const hasAllRequired = this.config!.tracker.requiredLabels.every(req => issueLabels.includes(req.toLowerCase()));
       if (!hasAllRequired) return false;
-
-      // Check excluded labels
-      const hasExcluded = this.config!.tracker.excludedLabels.some(excluded =>
-        issueLabels.includes(excluded.toLowerCase())
-      );
+      const hasExcluded = this.config!.tracker.excludedLabels.some(excluded => issueLabels.includes(excluded.toLowerCase()));
       if (hasExcluded) return false;
-
       return true;
     });
   }
 
-  async fetchIssuesByStates(_stateNames: string[]): Promise<Issue[]> {
-    return [];
-  }
-
-  async fetchIssueStatesByIds(_issueIds: string[]): Promise<Record<string, string>> {
-    return {};
-  }
+  async fetchIssuesByStates(_stateNames: string[]): Promise<Issue[]> { return []; }
+  async fetchIssueStatesByIds(_issueIds: string[]): Promise<Record<string, string>> { return {}; }
 
   async comment(issueId: string, body: string): Promise<void> {
     this.writes.push({ event: "comment", issueId, body });
@@ -86,35 +59,21 @@ class FakeIssueTracker implements IssueTracker {
   async applyWrite(event: string, issue: Issue, body: string): Promise<void> {
     this.writes.push({ event, issueId: issue.id, body });
     if (this.throwOnWrite) throw new Error("Write failed");
-
-    if (!this.config) return;
-    if (!this.config.tracker.writes.enabled) return;
-
-    const action = this.config.tracker.writes.actions[event as any];
+    if (!this.config || !this.config.tracker.writes.enabled) return;
+    const action = this.config.tracker.writes.actions[event as keyof typeof this.config.tracker.writes.actions];
     if (!action) return;
-
-    if (action.comment) {
-      await this.comment(issue.id, body);
-    }
-    if (action.transitionTo && issue.state !== action.transitionTo) {
-      await this.transition(issue.id, action.transitionTo);
-    }
+    if (action.comment) await this.comment(issue.id, body);
+    if (action.transitionTo && issue.state !== action.transitionTo) await this.transition(issue.id, action.transitionTo);
   }
 }
 
 // Fake workspace manager for testing
 class FakeWorktreeManager {
   async prepare(issue: Issue, attempt: number): Promise<Workspace> {
-    return {
-      path: `/workspace/${issue.id}/${attempt}`,
-      workspaceKey: issue.identifier.toLowerCase(),
-      branchName: `conduit/${issue.identifier.toLowerCase()}/${attempt}`,
-      createdNow: true,
-    };
+    return { path: `/workspace/${issue.id}/${attempt}`, workspaceKey: issue.identifier.toLowerCase(), branchName: `conduit/${issue.identifier.toLowerCase()}/${attempt}`, createdNow: true };
   }
 }
 
-// Helper to create a minimal config
 function createTestConfig(overrides: Partial<ServiceConfig> = {}): ServiceConfig {
   return {
     repoPath: "/test/repo",
@@ -126,83 +85,41 @@ function createTestConfig(overrides: Partial<ServiceConfig> = {}): ServiceConfig
       requiredLabels: [],
       excludedLabels: [],
       pageSize: 50,
-      writes: {
-        enabled: true,
-        actions: {
-          on_start: { comment: true },
-          on_success: { comment: true, transitionTo: "Done" },
-          on_terminal_failure: { comment: true },
-        },
-      },
+      writes: { enabled: true, actions: { on_start: { comment: true }, on_success: { comment: true, transitionTo: "Done" }, on_terminal_failure: { comment: true } } },
       raw: {},
     },
     polling: { intervalMs: 30000 },
     workspace: { root: "/workspaces", strategy: "git-worktree", baseRef: "main" },
     state: { root: "/state" },
     hooks: { afterCreate: undefined, beforeRun: undefined, afterRun: undefined, beforeRemove: undefined, timeoutMs: 300000 },
-    agent: {
-      kind: "fake",
-      maxConcurrentAgents: 10,
-      maxRetryBackoffMs: 60000,
-      maxConcurrentAgentsByState: {},
-      raw: {},
-    },
+    agent: { kind: "fake", maxConcurrentAgents: 10, maxAttempts: 0, maxRetryBackoffMs: 60000, maxConcurrentAgentsByState: {}, raw: {} },
     ...overrides,
   };
 }
 
-// Helper to create a test issue
 function createTestIssue(overrides: Partial<Issue> = {}): Issue {
-  return {
-    id: "issue-1",
-    identifier: "TEST-1",
-    title: "Test issue",
-    description: null,
-    priority: null,
-    state: "Todo",
-    branchName: null,
-    url: null,
-    labels: [],
-    blockedBy: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: null,
-    ...overrides,
-  };
+  return { id: "issue-1", identifier: "TEST-1", title: "Test issue", description: null, priority: null, state: "Todo", branchName: null, url: null, labels: [], blockedBy: [], createdAt: new Date().toISOString(), updatedAt: null, ...overrides };
+}
+
+function makeOrchestrator(config: ServiceConfig, tracker: FakeIssueTracker, runner: AgentRunner) {
+  const stateStore = new InMemoryStateStore();
+  const orch = new (Orchestrator as any)(config, { path: "test.md", config: {}, promptTemplate: "Test {{issue.identifier}}" }, tracker, runner, new Logger("error"));
+  orch["workspaces"] = new FakeWorktreeManager();
+  orch["state"] = stateStore;
+  return { orch: orch as Orchestrator, stateStore };
 }
 
 describe("given an issue with a required label", () => {
   describe("when a tick runs", () => {
     it("then the agent is dispatched", async () => {
-      const config = createTestConfig({
-        tracker: {
-          ...createTestConfig().tracker,
-          requiredLabels: ["agentic"],
-        },
-      });
+      const config = createTestConfig({ tracker: { ...createTestConfig().tracker, requiredLabels: ["agentic"] } });
       const tracker = new FakeIssueTracker();
       tracker.setConfig(config);
-      const issue = createTestIssue({ labels: ["agentic"] });
-      tracker.setCandidateIssues([issue]);
-
-      let agentWasCalled = false;
-      const runner: AgentRunner = {
-        run: async () => {
-          agentWasCalled = true;
-          return { status: "succeeded", output: "done", summary: "Task completed" };
-        },
-      };
-
-      const stateStore = new InMemoryStateStore();
-      const worktreeManager = new FakeWorktreeManager();
-      const logger = new Logger("error");
-
-      const orchestrator = new (Orchestrator as any)(config, { path: "test.md", config: {}, promptTemplate: "Test {{issue.identifier}}" }, tracker, runner, logger);
-      orchestrator["workspaces"] = worktreeManager;
-      orchestrator["state"] = stateStore;
-
-      await orchestrator.tick();
-
-      expect(agentWasCalled).toBe(true);
+      tracker.setCandidateIssues([createTestIssue({ labels: ["agentic"] })]);
+      let called = false;
+      const { orch } = makeOrchestrator(config, tracker, { run: async () => { called = true; return { status: "succeeded", output: "done" }; } });
+      await orch.tick();
+      expect(called).toBe(true);
     });
   });
 });
@@ -210,36 +127,14 @@ describe("given an issue with a required label", () => {
 describe("given an issue without a required label", () => {
   describe("when a tick runs", () => {
     it("then nothing happens", async () => {
-      const config = createTestConfig({
-        tracker: {
-          ...createTestConfig().tracker,
-          requiredLabels: ["agentic"],
-        },
-      });
+      const config = createTestConfig({ tracker: { ...createTestConfig().tracker, requiredLabels: ["agentic"] } });
       const tracker = new FakeIssueTracker();
       tracker.setConfig(config);
-      const issue = createTestIssue({ labels: ["other-label"] });
-      tracker.setCandidateIssues([issue]);
-
-      let agentWasCalled = false;
-      const runner: AgentRunner = {
-        run: async () => {
-          agentWasCalled = true;
-          return { status: "succeeded", output: "done", summary: "Task completed" };
-        },
-      };
-
-      const stateStore = new InMemoryStateStore();
-      const worktreeManager = new FakeWorktreeManager();
-      const logger = new Logger("error");
-
-      const orchestrator = new (Orchestrator as any)(config, { path: "test.md", config: {}, promptTemplate: "Test {{issue.identifier}}" }, tracker, runner, logger);
-      orchestrator["workspaces"] = worktreeManager;
-      orchestrator["state"] = stateStore;
-
-      await orchestrator.tick();
-
-      expect(agentWasCalled).toBe(false);
+      tracker.setCandidateIssues([createTestIssue({ labels: ["other-label"] })]);
+      let called = false;
+      const { orch } = makeOrchestrator(config, tracker, { run: async () => { called = true; return { status: "succeeded", output: "done" }; } });
+      await orch.tick();
+      expect(called).toBe(false);
     });
   });
 });
@@ -247,36 +142,14 @@ describe("given an issue without a required label", () => {
 describe("given an excluded label", () => {
   describe("when a tick runs", () => {
     it("then the issue is skipped", async () => {
-      const config = createTestConfig({
-        tracker: {
-          ...createTestConfig().tracker,
-          excludedLabels: ["blocked"],
-        },
-      });
+      const config = createTestConfig({ tracker: { ...createTestConfig().tracker, excludedLabels: ["blocked"] } });
       const tracker = new FakeIssueTracker();
       tracker.setConfig(config);
-      const issue = createTestIssue({ labels: ["blocked"] });
-      tracker.setCandidateIssues([issue]);
-
-      let agentWasCalled = false;
-      const runner: AgentRunner = {
-        run: async () => {
-          agentWasCalled = true;
-          return { status: "succeeded", output: "done", summary: "Task completed" };
-        },
-      };
-
-      const stateStore = new InMemoryStateStore();
-      const worktreeManager = new FakeWorktreeManager();
-      const logger = new Logger("error");
-
-      const orchestrator = new (Orchestrator as any)(config, { path: "test.md", config: {}, promptTemplate: "Test {{issue.identifier}}" }, tracker, runner, logger);
-      orchestrator["workspaces"] = worktreeManager;
-      orchestrator["state"] = stateStore;
-
-      await orchestrator.tick();
-
-      expect(agentWasCalled).toBe(false);
+      tracker.setCandidateIssues([createTestIssue({ labels: ["blocked"] })]);
+      let called = false;
+      const { orch } = makeOrchestrator(config, tracker, { run: async () => { called = true; return { status: "succeeded", output: "done" }; } });
+      await orch.tick();
+      expect(called).toBe(false);
     });
   });
 });
@@ -284,36 +157,12 @@ describe("given an excluded label", () => {
 describe("given a successful agent run with writes.enabled: true", () => {
   describe("when the run completes", () => {
     it("then on_success write fires with the configured comment + transition", async () => {
-      const config = createTestConfig({
-        tracker: {
-          ...createTestConfig().tracker,
-          writes: {
-            enabled: true,
-            actions: {
-              on_success: { comment: true, transitionTo: "Done" },
-            },
-          },
-        },
-      });
+      const config = createTestConfig({ tracker: { ...createTestConfig().tracker, writes: { enabled: true, actions: { on_success: { comment: true, transitionTo: "Done" } } } } });
       const tracker = new FakeIssueTracker();
       tracker.setConfig(config);
-      const issue = createTestIssue();
-      tracker.setCandidateIssues([issue]);
-
-      const runner: AgentRunner = {
-        run: async () => ({ status: "succeeded", output: "completed", summary: "Success" }),
-      };
-
-      const stateStore = new InMemoryStateStore();
-      const worktreeManager = new FakeWorktreeManager();
-      const logger = new Logger("error");
-
-      const orchestrator = new (Orchestrator as any)(config, { path: "test.md", config: {}, promptTemplate: "Test {{issue.identifier}}" }, tracker, runner, logger);
-      orchestrator["workspaces"] = worktreeManager;
-      orchestrator["state"] = stateStore;
-
-      await orchestrator.tick();
-
+      tracker.setCandidateIssues([createTestIssue()]);
+      const { orch } = makeOrchestrator(config, tracker, { run: async () => ({ status: "succeeded", output: "completed" }) });
+      await orch.tick();
       const writes = tracker.getWrites();
       expect(writes.some(w => w.event === "on_success")).toBe(true);
       expect(writes.some(w => w.event === "transition" && w.body === "Done")).toBe(true);
@@ -324,38 +173,13 @@ describe("given a successful agent run with writes.enabled: true", () => {
 describe("given a failed run", () => {
   describe("when it completes", () => {
     it("then on_terminal_failure fires", async () => {
-      const config = createTestConfig({
-        tracker: {
-          ...createTestConfig().tracker,
-          writes: {
-            enabled: true,
-            actions: {
-              on_terminal_failure: { comment: true },
-            },
-          },
-        },
-      });
+      const config = createTestConfig({ tracker: { ...createTestConfig().tracker, writes: { enabled: true, actions: { on_terminal_failure: { comment: true } } } } });
       const tracker = new FakeIssueTracker();
       tracker.setConfig(config);
-      const issue = createTestIssue();
-      tracker.setCandidateIssues([issue]);
-
-      const runner: AgentRunner = {
-        run: async () => ({ status: "failed", output: "error", summary: "Failed", error: "Test failure" }),
-      };
-
-      const stateStore = new InMemoryStateStore();
-      const worktreeManager = new FakeWorktreeManager();
-      const logger = new Logger("error");
-
-      const orchestrator = new (Orchestrator as any)(config, { path: "test.md", config: {}, promptTemplate: "Test {{issue.identifier}}" }, tracker, runner, logger);
-      orchestrator["workspaces"] = worktreeManager;
-      orchestrator["state"] = stateStore;
-
-      await orchestrator.tick();
-
-      const writes = tracker.getWrites();
-      expect(writes.some(w => w.event === "on_terminal_failure")).toBe(true);
+      tracker.setCandidateIssues([createTestIssue()]);
+      const { orch } = makeOrchestrator(config, tracker, { run: async () => ({ status: "failed", output: "error", error: "Test failure" }) });
+      await orch.tick();
+      expect(tracker.getWrites().some(w => w.event === "on_terminal_failure")).toBe(true);
     });
   });
 });
@@ -367,26 +191,11 @@ describe("given a tracker write that throws", () => {
       const tracker = new FakeIssueTracker();
       tracker.setConfig(config);
       tracker.setThrowOnWrite(true);
-      const issue = createTestIssue();
-      tracker.setCandidateIssues([issue]);
-
-      const runner: AgentRunner = {
-        run: async () => ({ status: "succeeded", output: "completed", summary: "Success" }),
-      };
-
-      const stateStore = new InMemoryStateStore();
-      const worktreeManager = new FakeWorktreeManager();
-      const logger = new Logger("error");
-
-      const orchestrator = new (Orchestrator as any)(config, { path: "test.md", config: {}, promptTemplate: "Test {{issue.identifier}}" }, tracker, runner, logger);
-      orchestrator["workspaces"] = worktreeManager;
-      orchestrator["state"] = stateStore;
-
-      await orchestrator.tick();
-
+      tracker.setCandidateIssues([createTestIssue()]);
+      const { orch, stateStore } = makeOrchestrator(config, tracker, { run: async () => ({ status: "succeeded", output: "completed" }) });
+      await orch.tick();
       const state = await stateStore.load();
-      const attempt = state.attempts.find(a => a.issueId === issue.id);
-      expect(attempt).toBeDefined();
+      const attempt = state.attempts.find((a: RunAttempt) => a.issueId === "issue-1");
       expect(attempt?.status).toBe("succeeded");
     });
   });
@@ -395,39 +204,17 @@ describe("given a tracker write that throws", () => {
 describe("given max_concurrent_agents: 1 and 3 candidate issues", () => {
   describe("when a tick runs", () => {
     it("then only 1 dispatch happens", async () => {
-      const config = createTestConfig({
-        agent: {
-          ...createTestConfig().agent,
-          maxConcurrentAgents: 1,
-        },
-      });
+      const config = createTestConfig({ agent: { ...createTestConfig().agent, maxConcurrentAgents: 1 } });
       const tracker = new FakeIssueTracker();
       tracker.setConfig(config);
-      const issues = [
+      tracker.setCandidateIssues([
         createTestIssue({ id: "issue-1", identifier: "TEST-1", priority: 1 }),
         createTestIssue({ id: "issue-2", identifier: "TEST-2", priority: 2 }),
         createTestIssue({ id: "issue-3", identifier: "TEST-3", priority: 3 }),
-      ];
-      tracker.setCandidateIssues(issues);
-
+      ]);
       let callCount = 0;
-      const runner: AgentRunner = {
-        run: async () => {
-          callCount++;
-          return { status: "succeeded", output: "done", summary: "Success" };
-        },
-      };
-
-      const stateStore = new InMemoryStateStore();
-      const worktreeManager = new FakeWorktreeManager();
-      const logger = new Logger("error");
-
-      const orchestrator = new (Orchestrator as any)(config, { path: "test.md", config: {}, promptTemplate: "Test {{issue.identifier}}" }, tracker, runner, logger);
-      orchestrator["workspaces"] = worktreeManager;
-      orchestrator["state"] = stateStore;
-
-      await orchestrator.tick();
-
+      const { orch } = makeOrchestrator(config, tracker, { run: async () => { callCount++; return { status: "succeeded", output: "done" }; } });
+      await orch.tick();
       expect(callCount).toBe(1);
     });
   });
@@ -439,28 +226,66 @@ describe("given --dry-run", () => {
       const config = createTestConfig();
       const tracker = new FakeIssueTracker();
       tracker.setConfig(config);
-      const issue = createTestIssue();
-      tracker.setCandidateIssues([issue]);
+      tracker.setCandidateIssues([createTestIssue()]);
+      let called = false;
+      const { orch } = makeOrchestrator(config, tracker, { run: async () => { called = true; return { status: "succeeded", output: "done" }; } });
+      await orch.tick({ dryRun: true });
+      expect(called).toBe(false);
+    });
+  });
+});
 
-      let agentWasCalled = false;
-      const runner: AgentRunner = {
-        run: async () => {
-          agentWasCalled = true;
-          return { status: "succeeded", output: "done", summary: "Task completed" };
-        },
-      };
+describe("given a succeeded issue the tracker still shows as open", () => {
+  describe("when a second tick runs", () => {
+    it("then the issue is re-dispatched (PR rejection / re-open scenario)", async () => {
+      const config = createTestConfig();
+      const tracker = new FakeIssueTracker();
+      tracker.setConfig(config);
+      tracker.setCandidateIssues([createTestIssue()]);
+      let callCount = 0;
+      const { orch } = makeOrchestrator(config, tracker, { run: async () => { callCount++; return { status: "succeeded", output: "done" }; } });
+      await orch.tick();
+      expect(callCount).toBe(1);
+      // Tracker still returns the issue — simulates PR rejection + issue re-opened
+      await orch.tick();
+      expect(callCount).toBe(2);
+    });
+  });
+});
 
-      const stateStore = new InMemoryStateStore();
-      const worktreeManager = new FakeWorktreeManager();
-      const logger = new Logger("error");
+describe("given a succeeded issue whose tracker closes it", () => {
+  describe("when a second tick runs", () => {
+    it("then the issue is not re-dispatched", async () => {
+      const config = createTestConfig();
+      const tracker = new FakeIssueTracker();
+      tracker.setConfig(config);
+      tracker.setCandidateIssues([createTestIssue()]);
+      let callCount = 0;
+      const { orch } = makeOrchestrator(config, tracker, { run: async () => { callCount++; return { status: "succeeded", output: "done" }; } });
+      await orch.tick();
+      expect(callCount).toBe(1);
+      tracker.setCandidateIssues([]);
+      await orch.tick();
+      expect(callCount).toBe(1);
+    });
+  });
+});
 
-      const orchestrator = new (Orchestrator as any)(config, { path: "test.md", config: {}, promptTemplate: "Test {{issue.identifier}}" }, tracker, runner, logger);
-      orchestrator["workspaces"] = worktreeManager;
-      orchestrator["state"] = stateStore;
-
-      await orchestrator.tick({ dryRun: true });
-
-      expect(agentWasCalled).toBe(false);
+describe("given max_attempts: 3 and a persistently failing agent", () => {
+  describe("when 4 ticks run", () => {
+    it("then the agent is called exactly 3 times", async () => {
+      const config = createTestConfig({ agent: { ...createTestConfig().agent, maxAttempts: 3 } });
+      const tracker = new FakeIssueTracker();
+      tracker.setConfig(config);
+      tracker.setCandidateIssues([createTestIssue()]);
+      let callCount = 0;
+      const { orch } = makeOrchestrator(config, tracker, { run: async () => { callCount++; return { status: "failed", output: "err", error: "boom" }; } });
+      await orch.tick();
+      await orch.tick();
+      await orch.tick();
+      expect(callCount).toBe(3);
+      await orch.tick();
+      expect(callCount).toBe(3);
     });
   });
 });
