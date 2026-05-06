@@ -27,6 +27,12 @@ codex-cli:
   model: gpt-5
 ```
 
+## Token usage
+
+The runner automatically enables the `--json` flag in non-interactive mode (`codex exec`) to capture token usage metrics. These are surfaced in the success comment when the tracker supports it.
+
+If you specify a custom `command`, the runner will append `--json` if not already present.
+
 ## Source
 
 [`packages/conduit-runner-codex-cli`](https://github.com/conduit-harness/conduit/tree/main/packages/conduit-runner-codex-cli)
