@@ -3,13 +3,17 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { spawn } from "node:child_process";
+import readline from "node:readline";
 import { fileURLToPath } from "node:url";
 import { loadDotEnv, discoverWorkflow, loadWorkflow, buildConfig, validateForDispatch } from "../config/workflow.js";
 import { Logger, type LogLevel } from "../logging/logger.js";
+import { FileLogSink } from "../logging/file-sink.js";
 import { FakeTracker } from "../tracker/fake.js";
 import type { IssueTracker } from "../tracker/tracker.js";
 import { FakeAgentRunner, type AgentRunner } from "../agent/runner.js";
 import { Orchestrator } from "../orchestrator/orchestrator.js";
+import { buildReport, defaultLogPath, ISSUE_REPO, readLastRunLog, readPackageVersion, type ReportOptions } from "../reporting/report.js";
 
 type Args = { command: string; flags: Record<string, string | boolean> };
 
@@ -70,7 +74,7 @@ async function copyFileIfAllowed(source: string, target: string, force: boolean)
 
 async function appendGitIgnore(repo: string) {
   const file = path.join(repo, ".gitignore");
-  const rules = [".env", ".env.*", "!.env.example", ".conduit/state/", ".conduit/workspaces/"];
+  const rules = [".env", ".env.*", "!.env.example", ".conduit/state/", ".conduit/workspaces/", ".conduit/logs/"];
   const existing = existsSync(file) ? await readFile(file, "utf8") : "";
   const missing = rules.filter(rule => !existing.split(/\r?\n/).includes(rule));
   if (missing.length === 0) return;
@@ -89,11 +93,117 @@ async function loadPlugin<T>(role: "tracker" | "runner", kind: string, config: R
   }
 }
 
+async function report(flags: Record<string, string | boolean>) {
+  const repo = resolvePath(process.cwd(), flag(flags, "repo") ?? ".");
+  const { content, exists, path: logPath } = await readLastRunLog(repo);
+  const conduitVersion = await readPackageVersion();
+  const opts: ReportOptions = {
+    homeDir: os.homedir(),
+    workspaceRoot: repo,
+    ...(flag(flags, "domain") !== undefined ? { domain: flag(flags, "domain")! } : {}),
+    ...(flag(flags, "type") !== undefined ? { type: flag(flags, "type")! } : {}),
+    ...(flag(flags, "title") !== undefined ? { title: flag(flags, "title")! } : {}),
+  };
+  const built = buildReport({ rawLog: content, logExists: exists, conduitVersion, options: opts });
+
+  const outFlag = flag(flags, "out");
+  if (outFlag) {
+    const target = resolvePath(repo, outFlag);
+    await mkdir(path.dirname(target), { recursive: true });
+    await writeFile(target, built.body, "utf8");
+    console.log(`Wrote redacted issue body to ${target}`);
+  }
+
+  if (!exists) {
+    process.stderr.write("No '.conduit/logs/last-run.ndjson' found — filing without a log.\n");
+    process.stderr.write(`(Run 'conduit once' first to capture a log at ${logPath}.)\n`);
+  }
+
+  let body = built.body;
+  const noConfirm = !!flags["no-confirm"];
+  if (!noConfirm) {
+    process.stderr.write("\n--- Redacted issue preview (review for sensitive data) ---\n");
+    process.stderr.write(body + "\n");
+    process.stderr.write("--- end preview ---\n\n");
+    const answer = await prompt("File this report? [y/N/edit] ");
+    const choice = answer.trim().toLowerCase();
+    if (choice === "edit" || choice === "e") {
+      body = await editInExternalEditor(body);
+    } else if (choice !== "y" && choice !== "yes") {
+      console.log("Aborted. No issue filed.");
+      return;
+    }
+  } else {
+    process.stderr.write(body + "\n");
+  }
+
+  if (flags.gh) {
+    await fileViaGh(built.title, body);
+    return;
+  }
+
+  const url = buildUrlWithBody(built.url, body, opts);
+  console.log("Open this URL to file the issue:");
+  console.log(url);
+}
+
+function buildUrlWithBody(originalUrl: string, body: string, opts: ReportOptions): string {
+  const u = new URL(originalUrl);
+  u.searchParams.set("description", body);
+  if (opts.domain) u.searchParams.set("domain", opts.domain);
+  if (opts.type) u.searchParams.set("type", opts.type);
+  if (opts.title) u.searchParams.set("title", opts.title);
+  return u.toString();
+}
+
+function prompt(question: string): Promise<string> {
+  return new Promise(resolve => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
+    rl.question(question, answer => { rl.close(); resolve(answer); });
+  });
+}
+
+async function editInExternalEditor(initial: string): Promise<string> {
+  const editor = process.env.EDITOR ?? process.env.VISUAL ?? (process.platform === "win32" ? "notepad" : "vi");
+  const tmpDir = await fsTmpDir();
+  const tmpFile = path.join(tmpDir, `conduit-report-${Date.now()}.md`);
+  await writeFile(tmpFile, initial, "utf8");
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn(editor, [tmpFile], { stdio: "inherit", shell: process.platform === "win32" });
+    child.on("exit", code => code === 0 ? resolve() : reject(new Error(`editor_exited_${code}`)));
+    child.on("error", reject);
+  });
+  return await readFile(tmpFile, "utf8");
+}
+
+async function fsTmpDir(): Promise<string> {
+  const { mkdtemp } = await import("node:fs/promises");
+  return await mkdtemp(path.join(os.tmpdir(), "conduit-report-"));
+}
+
+async function fileViaGh(title: string, body: string): Promise<void> {
+  const tmp = await fsTmpDir();
+  const bodyFile = path.join(tmp, "body.md");
+  await writeFile(bodyFile, body, "utf8");
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn("gh", ["issue", "create", "--repo", ISSUE_REPO, "--title", title, "--body-file", bodyFile], {
+      stdio: "inherit",
+      shell: process.platform === "win32",
+    });
+    child.on("exit", code => code === 0 ? resolve() : reject(new Error(`gh_exited_${code}`)));
+    child.on("error", err => {
+      const message = err instanceof Error && /ENOENT/.test(err.message) ? "gh CLI not found on PATH — install from https://cli.github.com or omit --gh." : err.message;
+      reject(new Error(message));
+    });
+  });
+}
+
 async function main() {
   const args = parse(process.argv.slice(2));
   if (args.command === "help" || args.flags.help) return usage();
   if (args.command === "version" || args.flags.version) { console.log(await version()); return; }
   if (args.command === "init") { await init(args.flags); return; }
+  if (args.command === "report") { await report(args.flags); return; }
 
   const repo = resolvePath(process.cwd(), flag(args.flags, "repo") ?? ".");
   await loadDotEnv(resolvePath(repo, flag(args.flags, "env") ?? ".env"));
@@ -101,7 +211,9 @@ async function main() {
   const workflow = await loadWorkflow(workflowPath);
   const stateRoot = flag(args.flags, "state-dir");
   const config = buildConfig(workflow, repo, stateRoot ? { stateRoot } : {});
-  const logger = new Logger((flag(args.flags, "log-level") as LogLevel | undefined) ?? "info");
+  const level = (flag(args.flags, "log-level") as LogLevel | undefined) ?? "info";
+  const sink = (args.command === "once" || args.command === "start") ? new FileLogSink(defaultLogPath(repo)) : undefined;
+  const logger = sink ? new Logger(level, sink) : new Logger(level);
 
   if (args.command === "validate") {
     validateForDispatch(config);
@@ -120,6 +232,7 @@ async function main() {
   const tracker: IssueTracker = config.tracker.kind === "fake" ? new FakeTracker(config) : await loadPlugin<IssueTracker>("tracker", config.tracker.kind, config);
   const agent: AgentRunner = config.agent.kind === "fake" ? new FakeAgentRunner() : await loadPlugin<AgentRunner>("runner", config.agent.kind, config);
   const orch = new Orchestrator(config, workflow, tracker, agent, logger);
+  logger.info("run starting", { command: args.command, tracker: config.tracker.kind, agent: config.agent.kind, repo: config.repoPath, logFile: sink ? defaultLogPath(repo) : null });
 
   if (args.command === "once") { await orch.tick({ dryRun: !!args.flags["dry-run"] }); return; }
   let stopped = false;
@@ -132,7 +245,7 @@ async function main() {
 }
 
 function usage(exitCode = 0) {
-  console.log(`Usage: conduit <init|validate|once|start|version> [options]\n\nCommands:\n  init       Create local workflow/env starter files\n  validate   Parse and validate workflow/configuration\n  once       Run one fetch/filter/dispatch cycle\n  start      Run the polling loop continuously\n  version    Print the Conduit package version\n\nOptions:\n  --workflow PATH       Workflow markdown path\n  --repo PATH           Target repository path\n  --env PATH            Dotenv file path\n  --state-dir PATH      Runtime state directory override\n  --dry-run             Select issues without dispatching agents\n  --preflight           Validate required external integration settings\n  --log-level LEVEL     debug|info|warn|error\n  --force               init: overwrite existing files\n  --fake                init: use fake local workflow instead of Linear/Codex example\n  --gitignore           init: append Conduit ignore rules to target .gitignore\n  --version             Print version\n`);
+  console.log(`Usage: conduit <init|validate|once|start|report|version> [options]\n\nCommands:\n  init       Create local workflow/env starter files\n  validate   Parse and validate workflow/configuration\n  once       Run one fetch/filter/dispatch cycle\n  start      Run the polling loop continuously\n  report     Draft a sanitized GitHub issue from the latest run log\n  version    Print the Conduit package version\n\nOptions:\n  --workflow PATH       Workflow markdown path\n  --repo PATH           Target repository path\n  --env PATH            Dotenv file path\n  --state-dir PATH      Runtime state directory override\n  --dry-run             Select issues without dispatching agents\n  --preflight           Validate required external integration settings\n  --log-level LEVEL     debug|info|warn|error\n  --force               init: overwrite existing files\n  --fake                init: use fake local workflow instead of Linear/Codex example\n  --gitignore           init: append Conduit ignore rules to target .gitignore\n  --gh                  report: file via gh CLI instead of printing a URL\n  --out PATH            report: also write the redacted body to PATH\n  --no-confirm          report: skip the y/N/edit prompt (still prints preview to stderr)\n  --domain VALUE        report: override the issue Domain field (default: Core)\n  --type VALUE          report: override the issue Type field (default: Bug)\n  --title VALUE         report: override the issue title\n  --version             Print version\n`);
   process.exit(exitCode);
 }
 

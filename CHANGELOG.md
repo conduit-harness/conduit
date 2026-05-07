@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - README intro now mentions Conduit's lineage from the Symphony service specification.
 - `CHANGELOG.md` (this file).
 - `DEVELOPMENT.md` describing the development cadence and pre-release flow.
+- `conduit report` subcommand: drafts a sanitized GitHub issue from the latest run. Reads `.conduit/logs/last-run.ndjson`, redacts known token shapes / sensitive keys / home + workspace paths, prints a confirmation preview, then either prints a pre-filled issue-form URL (default), shells out to `gh issue create --gh`, or writes the body to `--out PATH`. `conduit once` and `conduit start` now also persist their NDJSON log to `.conduit/logs/last-run.ndjson` (5 MB cap with single-file rotation, truncated on each invocation). `conduit init --gitignore` now adds `.conduit/logs/` to the rules it appends.
 
 ### Changed
 - Abandoned the `0.0.2-rc2` release cycle in favor of going directly to `0.1.0`.
