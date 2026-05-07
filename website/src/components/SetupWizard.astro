@@ -75,27 +75,6 @@
           <label><input type="radio" name="inference_mode" value="gpu" /> <span>GPU</span></label>
         </div>
         <div class="hardware-fields">
-          <label>CPU vendor
-            <select data-input="hardware.cpu_vendor">
-              <option value="intel">Intel</option>
-              <option value="amd">AMD</option>
-              <option value="qualcomm">Qualcomm</option>
-              <option value="apple">Apple</option>
-            </select>
-          </label>
-          <label>CPU series
-            <select data-input="hardware.cpu_series" data-cpu-series></select>
-          </label>
-          <label data-gpu-only hidden>GPU vendor
-            <select data-input="hardware.gpu_vendor">
-              <option value="nvidia">NVIDIA</option>
-              <option value="amd">AMD</option>
-              <option value="intel">Intel</option>
-            </select>
-          </label>
-          <label data-gpu-only hidden>GPU series
-            <select data-input="hardware.gpu_series" data-gpu-series></select>
-          </label>
           <label>RAM (GB): <output data-ram-display>16</output>
             <input type="range" min="0" max="11" step="1" value="5" data-ram-input />
           </label>
@@ -156,38 +135,6 @@
   type RunnerKind = "claude-cli" | "codex-cli" | "aider";
   type TemplateKind = "autonomous" | "human-in-the-loop" | "reply-draft";
   type InferenceMode = "cpu" | "gpu";
-  type CpuVendor = "intel" | "amd" | "qualcomm" | "apple";
-  type GpuVendor = "nvidia" | "amd" | "intel";
-
-  const CPU_SERIES_BY_VENDOR: Record<CpuVendor, Array<{ value: string; label: string }>> = {
-    intel: [
-      { value: "core-ultra-s2", label: "Core Ultra (Series 2)" },
-      { value: "core-ultra-s1", label: "Core Ultra (Series 1)" },
-      { value: "core-14th", label: "Core 14th Gen" },
-      { value: "core-13th", label: "Core 13th Gen" },
-      { value: "core-12th", label: "Core 12th Gen" },
-      { value: "core-11th", label: "Core 11th Gen" },
-      { value: "core-10th", label: "Core 10th Gen" },
-    ],
-    amd: [
-      { value: "ryzen-9000", label: "Ryzen 9000" },
-      { value: "ryzen-ai-300", label: "Ryzen AI 300" },
-      { value: "ryzen-7000", label: "Ryzen 7000" },
-      { value: "ryzen-5000", label: "Ryzen 5000" },
-      { value: "ryzen-3000", label: "Ryzen 3000" },
-    ],
-    qualcomm: [
-      { value: "snapdragon-x2-elite", label: "Snapdragon X2 Elite" },
-      { value: "snapdragon-x-elite", label: "Snapdragon X Elite" },
-      { value: "snapdragon-x-plus", label: "Snapdragon X Plus" },
-    ],
-    apple: [
-      { value: "m4", label: "M4" },
-      { value: "m3", label: "M3" },
-      { value: "m2", label: "M2" },
-      { value: "m1", label: "M1" },
-    ],
-  };
 
   // Pessimistic tok/s floors per memory tier on Q4_K_M quants. These are
   // intentionally conservative — they should be exceeded on most real
@@ -205,30 +152,6 @@
     for (const b of BENCHMARKS) if (memGb >= b.ramFloor) return b;
     return BENCHMARKS[BENCHMARKS.length - 1]!;
   }
-
-  // Discrete GPUs only — iGPUs intentionally excluded.
-  const GPU_SERIES_BY_VENDOR: Record<GpuVendor, Array<{ value: string; label: string }>> = {
-    nvidia: [
-      { value: "rtx5xxx", label: "RTX 50xx" },
-      { value: "rtx4xxx", label: "RTX 40xx" },
-      { value: "rtx3xxx", label: "RTX 30xx" },
-      { value: "rtx2xxx", label: "RTX 20xx" },
-      { value: "gtx16xx", label: "GTX 16xx" },
-      { value: "gtx10xx", label: "GTX 10xx" },
-      { value: "gtx9xx", label: "GTX 9xx" },
-    ],
-    amd: [
-      { value: "rx9xxx", label: "RX 9xxx" },
-      { value: "rx7xxx", label: "RX 7xxx" },
-      { value: "rx6xxx", label: "RX 6xxx" },
-      { value: "rx5xxx", label: "RX 5xxx" },
-      { value: "rx5xx", label: "RX 5xx" },
-    ],
-    intel: [
-      { value: "arc-b", label: "Arc B-series" },
-      { value: "arc-a", label: "Arc A-series" },
-    ],
-  };
 
   const root = document.querySelector<HTMLElement>("[data-wizard]");
   if (root) {
@@ -254,8 +177,6 @@
       });
       el.addEventListener("change", () => {
         state.inputs[el.dataset.input!] = el.value;
-        if (el.dataset.input === "hardware.gpu_vendor") repopulateGpuSeries();
-        if (el.dataset.input === "hardware.cpu_vendor") repopulateCpuSeries();
         render();
       });
     });
@@ -369,36 +290,6 @@
       root!.querySelectorAll<HTMLElement>("[data-gpu-only]").forEach((el) => {
         el.hidden = state.inferenceMode !== "gpu";
       });
-    }
-
-    function repopulateGpuSeries() {
-      const select = root!.querySelector<HTMLSelectElement>("[data-gpu-series]");
-      if (!select) return;
-      const vendor = (state.inputs["hardware.gpu_vendor"] as GpuVendor) || "nvidia";
-      const options = GPU_SERIES_BY_VENDOR[vendor] ?? [];
-      select.innerHTML = "";
-      for (const opt of options) {
-        const o = document.createElement("option");
-        o.value = opt.value;
-        o.textContent = opt.label;
-        select.appendChild(o);
-      }
-      state.inputs["hardware.gpu_series"] = select.value;
-    }
-
-    function repopulateCpuSeries() {
-      const select = root!.querySelector<HTMLSelectElement>("[data-cpu-series]");
-      if (!select) return;
-      const vendor = (state.inputs["hardware.cpu_vendor"] as CpuVendor) || "intel";
-      const options = CPU_SERIES_BY_VENDOR[vendor] ?? [];
-      select.innerHTML = "";
-      for (const opt of options) {
-        const o = document.createElement("option");
-        o.value = opt.value;
-        o.textContent = opt.label;
-        select.appendChild(o);
-      }
-      state.inputs["hardware.cpu_series"] = select.value;
     }
 
     function trackerPackage(t: TrackerKind) {
@@ -587,12 +478,6 @@
       const tps = state.inferenceMode === "gpu" ? bm.gpuTps : bm.cpuTps;
       const lines: string[] = ["# hardware:"];
       lines.push(`#   inference: ${state.inferenceMode}`);
-      lines.push(`#   cpu_vendor: ${state.inputs["hardware.cpu_vendor"] || "intel"}`);
-      lines.push(`#   cpu_series: ${state.inputs["hardware.cpu_series"] || ""}`);
-      if (state.inferenceMode === "gpu") {
-        lines.push(`#   gpu_vendor: ${state.inputs["hardware.gpu_vendor"] || "nvidia"}`);
-        lines.push(`#   gpu_series: ${state.inputs["hardware.gpu_series"] || ""}`);
-      }
       lines.push(`#   ram_gb: ${state.inputs["hardware.ram_gb"] || "16"}`);
       lines.push(`# benchmark (pessimistic floor, verify by hand):`);
       lines.push(`#   model: ${bm.model}`);
@@ -709,8 +594,6 @@
       }
     }
 
-    repopulateCpuSeries();
-    repopulateGpuSeries();
     toggleFields();
     render();
   }
