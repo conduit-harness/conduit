@@ -69,40 +69,41 @@
       </div>
 
       <div class="hardware" data-hardware-section hidden>
-        <h4>Hardware</h4>
-        <div class="choices" role="radiogroup" aria-label="Inference mode">
-          <label><input type="radio" name="inference_mode" value="cpu" checked /> <span>CPU</span></label>
-          <label><input type="radio" name="inference_mode" value="gpu" /> <span>GPU</span></label>
-        </div>
-        <div class="hardware-fields">
-          <label>CPU vendor
-            <select data-input="hardware.cpu_vendor">
-              <option value="intel">Intel</option>
-              <option value="amd">AMD</option>
-              <option value="qualcomm">Qualcomm</option>
-              <option value="apple">Apple</option>
-            </select>
-          </label>
-          <label>RAM (GB): <output data-ram-display>16</output>
-            <input type="range" min="0" max="11" step="1" value="5" data-ram-input />
-          </label>
-          <label data-gpu-only hidden>GPU vendor
-            <select data-input="hardware.gpu_vendor">
-              <option value="nvidia">NVIDIA</option>
-              <option value="amd">AMD</option>
-              <option value="intel">Intel</option>
-            </select>
-          </label>
-          <label data-gpu-only hidden>VRAM (GB): <output data-vram-display>12</output>
-            <input type="range" min="0" max="9" step="1" value="4" data-vram-input />
-          </label>
-        </div>
-
-        <p class="hardware-note">
-          Throughput depends on your exact setup — model size, quantisation,
-          context length, OS, drivers, and concurrent load. Try a smaller
-          model first if you're unsure.
-        </p>
+        <details class="hardware-details">
+          <summary>Tune for my hardware</summary>
+          <div class="choices" role="radiogroup" aria-label="Inference mode">
+            <label><input type="radio" name="inference_mode" value="cpu" checked /> <span>CPU</span></label>
+            <label><input type="radio" name="inference_mode" value="gpu" /> <span>GPU</span></label>
+          </div>
+          <div class="hardware-fields">
+            <label>CPU vendor
+              <select data-input="hardware.cpu_vendor">
+                <option value="intel">Intel</option>
+                <option value="amd">AMD</option>
+                <option value="qualcomm">Qualcomm</option>
+                <option value="apple">Apple</option>
+              </select>
+            </label>
+            <label>RAM (GB): <output data-ram-display>16</output>
+              <input type="range" min="0" max="11" step="1" value="5" data-ram-input />
+            </label>
+            <label data-gpu-only hidden>GPU vendor
+              <select data-input="hardware.gpu_vendor">
+                <option value="nvidia">NVIDIA</option>
+                <option value="amd">AMD</option>
+                <option value="intel">Intel</option>
+              </select>
+            </label>
+            <label data-gpu-only hidden>VRAM (GB): <output data-vram-display>12</output>
+              <input type="range" min="0" max="9" step="1" value="4" data-vram-input />
+            </label>
+          </div>
+          <p class="hardware-note">
+            Throughput depends on your exact setup — model size, quantisation,
+            context length, OS, drivers, and concurrent load. Try a smaller
+            model first if you're unsure.
+          </p>
+        </details>
       </div>
     </li>
 
@@ -119,27 +120,31 @@
     </li>
 
     <li>
-      <h3>4. Install</h3>
-      <pre><code data-output="install"></code></pre>
-      <button type="button" data-copy="install">Copy</button>
-    </li>
-
-    <li>
-      <h3>5. <code>.conduit/workflow.md</code></h3>
-      <pre><code data-output="workflow"></code></pre>
-      <button type="button" data-copy="workflow">Copy</button>
-    </li>
-
-    <li>
-      <h3>6. <code>.env</code></h3>
-      <pre><code data-output="env"></code></pre>
-      <button type="button" data-copy="env">Copy</button>
-    </li>
-
-    <li>
-      <h3>7. Run</h3>
-      <pre><code data-output="run"></code></pre>
-      <button type="button" data-copy="run">Copy</button>
+      <h3>4. Commands</h3>
+      <div class="output-tabs">
+        <div class="tab-bar" role="tablist" aria-label="Commands">
+          <button type="button" role="tab" aria-selected="true" data-tab="install">Install</button>
+          <button type="button" role="tab" aria-selected="false" data-tab="workflow">workflow.md</button>
+          <button type="button" role="tab" aria-selected="false" data-tab="env">.env</button>
+          <button type="button" role="tab" aria-selected="false" data-tab="run">Run</button>
+        </div>
+        <div class="tab-panel" data-tab-panel="install">
+          <pre><code data-output="install"></code></pre>
+          <button type="button" data-copy="install">Copy</button>
+        </div>
+        <div class="tab-panel" data-tab-panel="workflow" hidden>
+          <pre><code data-output="workflow"></code></pre>
+          <button type="button" data-copy="workflow">Copy</button>
+        </div>
+        <div class="tab-panel" data-tab-panel="env" hidden>
+          <pre><code data-output="env"></code></pre>
+          <button type="button" data-copy="env">Copy</button>
+        </div>
+        <div class="tab-panel" data-tab-panel="run" hidden>
+          <pre><code data-output="run"></code></pre>
+          <button type="button" data-copy="run">Copy</button>
+        </div>
+      </div>
     </li>
   </ol>
 </div>
@@ -259,6 +264,18 @@
           }
         });
       });
+
+    root.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const target = btn.dataset.tab!;
+        root!.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((b) => {
+          b.setAttribute("aria-selected", b.dataset.tab === target ? "true" : "false");
+        });
+        root!.querySelectorAll<HTMLElement>("[data-tab-panel]").forEach((panel) => {
+          panel.hidden = panel.dataset.tabPanel !== target;
+        });
+      });
+    });
 
     root.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach((btn) => {
       btn.addEventListener("click", async () => {
@@ -677,14 +694,62 @@
   .wizard button[data-copy]:hover {
     border-color: var(--sl-color-accent);
   }
+  .output-tabs {
+    margin-top: 0.5rem;
+  }
+  .tab-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-bottom: -1px;
+  }
+  .tab-bar button {
+    padding: 0.3rem 0.7rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.35rem 0.35rem 0 0;
+    background: var(--sl-color-bg);
+    color: var(--sl-color-gray-2);
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .tab-bar button[aria-selected="true"] {
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-accent-high);
+    border-color: var(--sl-color-accent);
+    border-bottom-color: var(--sl-color-bg-sidebar);
+  }
+  .tab-panel {
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0 0.35rem 0.35rem 0.35rem;
+    padding: 0.75rem;
+  }
+  .tab-panel pre {
+    margin: 0 0 0.5rem 0;
+  }
   .hardware {
     margin-top: 1rem;
     padding-top: 0.75rem;
     border-top: 1px dashed var(--sl-color-gray-5);
   }
-  .hardware h4 {
-    margin: 0 0 0.5rem 0;
-    font-size: 0.95rem;
+  .hardware-details summary {
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--sl-color-gray-3);
+    user-select: none;
+    margin-bottom: 0.5rem;
+    list-style: none;
+  }
+  .hardware-details summary::after {
+    content: " ▾";
+  }
+  .hardware-details[open] summary::after {
+    content: " ▴";
+  }
+  .hardware-details summary:hover {
+    color: var(--sl-color-accent-high);
+  }
+  .hardware-details[open] summary {
+    margin-bottom: 0.75rem;
   }
   .hardware-fields {
     display: grid;

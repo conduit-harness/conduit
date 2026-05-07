@@ -5,15 +5,24 @@ import type { AgentRunner, AgentResult } from "../agent/runner.js";
 import { GitWorktreeManager } from "../workspace/git-worktree.js";
 import { JsonStateStore } from "../state/json-state.js";
 import { renderPrompt } from "../prompt/render.js";
+import { loadWorkflow, buildConfig } from "../config/workflow.js";
 
 export class Orchestrator {
   private readonly workspaces: GitWorktreeManager;
   private readonly state: JsonStateStore;
-  constructor(private readonly config: ServiceConfig, private readonly workflow: WorkflowDefinition, private readonly tracker: IssueTracker, private readonly agent: AgentRunner, private readonly logger: Logger) {
+  constructor(private config: ServiceConfig, private workflow: WorkflowDefinition, private readonly tracker: IssueTracker, private readonly agent: AgentRunner, private readonly logger: Logger) {
     this.workspaces = new GitWorktreeManager(config);
     this.state = new JsonStateStore(config.state.root);
   }
   async tick(options: { dryRun?: boolean } = {}) {
+    try {
+      const freshWorkflow = await loadWorkflow(this.config.workflowPath);
+      const freshConfig = buildConfig(freshWorkflow, this.config.repoPath, { stateRoot: this.config.state.root });
+      this.workflow = freshWorkflow;
+      this.config = freshConfig;
+    } catch (err) {
+      this.logger.warn("workflow_reload_failed", { path: this.config.workflowPath, error: err instanceof Error ? err.message : String(err) });
+    }
     const candidates = await this.tracker.fetchCandidateIssues();
     const state = await this.state.load();
     const candidateIds = new Set(candidates.map(i => i.id));
