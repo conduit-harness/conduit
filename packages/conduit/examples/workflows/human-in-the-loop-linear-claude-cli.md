@@ -54,6 +54,12 @@ Attempt: {{attempt.number}}
 Description:
 {{issue.description}}
 
-Implement the change in the workspace and run relevant tests, but do not merge or close the issue.
-When you are done, write a short review note to {{workspace.path}}/REVIEW.md describing what you changed, what you tested, and any open questions.
-Stop after the review note — Conduit will transition the issue to "In Review" and a human will take it from here.
+Implement the change in the workspace and run relevant tests. Commit early, commit often — make focused commits as you complete each logical step.
+
+## On finish
+
+1. Stage and commit all changes with a descriptive message.
+2. Push the branch: `git push -u origin HEAD`.
+3. Write a review note to `{{workspace.path}}/REVIEW.md` describing what you changed, what you tested, and any open questions.
+
+Do not open a PR — stop after the review note. Conduit will transition the issue to "In Review" and a human will take it from here.
