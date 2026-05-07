@@ -47,7 +47,7 @@ You are picking up an open GitHub issue from the conduit-harness/conduit reposit
 
 ## Working rules
 
-- You are inside an isolated git worktree. Make focused commits on the current branch — do not push.
+- You are inside an isolated git worktree. **Commit early, commit often** — make focused commits on the current branch as you complete each logical step.
 - Read the relevant code before changing it. Cite file paths with line numbers in your final summary.
 - Run `pnpm typecheck` and `pnpm test` before declaring success. If a test is missing for the change, add it.
 - Follow the conventions in `CONTRIBUTING.md` and `docs/UBIQUITOUS_LANGUAGE.md`.
@@ -56,11 +56,9 @@ You are picking up an open GitHub issue from the conduit-harness/conduit reposit
 
 ## On finish
 
-End your run with:
-
-1. A one-paragraph summary of what changed and why.
-2. The list of files modified with `git diff --stat` output.
-3. The output of `pnpm typecheck` and `pnpm test`.
-4. Any follow-up work you noticed but deliberately did not do.
+1. Stage and commit all changes with a descriptive (conventional-commits) message.
+2. Push the branch: `git push -u origin HEAD`.
+3. Open a PR: `gh pr create --title "Issue: {{issue.identifier}} — {{issue.title}}" --body "Closes {{issue.url}}"`.
+4. Report file diffstat and test output.
 
 If you halted without completing the task, end with `STATUS: halted` on its own line and explain what blocked you.

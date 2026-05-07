@@ -56,4 +56,13 @@ Attempt: {{attempt.number}}
 Description:
 {{issue.description}}
 
-Please make the smallest safe change, run relevant tests, and summarize the result.
+## Working rules
+
+Make the smallest safe change. Run relevant tests. Commit early, commit often — make focused commits as you complete each logical step.
+
+## On finish
+
+1. Stage and commit all changes with a descriptive message.
+2. Push the branch: `git push -u origin HEAD`.
+3. Open a PR: `gh pr create --title "Issue: {{issue.identifier}} — {{issue.title}}" --body "Closes {{issue.url}}"`.
+4. Report file diffstat and test output.
