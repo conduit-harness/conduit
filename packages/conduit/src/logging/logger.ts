@@ -1,8 +1,19 @@
+import { appendFileSync, mkdirSync, renameSync, statSync, writeFileSync } from "node:fs";
+import path from "node:path";
+
 export type LogLevel = "debug" | "info" | "warn" | "error";
 const rank: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, error: 40 };
 
+const MAX_SINK_BYTES = 5 * 1024 * 1024;
+
+export type LoggerOptions = { sinkPath?: string };
+
 export class Logger {
-  constructor(private readonly level: LogLevel = "info") {}
+  private readonly sinkPath: string | null;
+  private sinkErrorReported = false;
+  constructor(private readonly level: LogLevel = "info", options: LoggerOptions = {}) {
+    this.sinkPath = options.sinkPath ?? null;
+  }
   child(fields: Record<string, unknown>): Logger {
     return new ChildLogger(this, fields);
   }
@@ -15,6 +26,26 @@ export class Logger {
     const record = { ts: new Date().toISOString(), level, message, ...fields };
     const line = JSON.stringify(record);
     if (level === "error") console.error(line); else console.log(line);
+    this.appendSink(line);
+  }
+  private appendSink(line: string) {
+    if (!this.sinkPath) return;
+    try {
+      try {
+        const s = statSync(this.sinkPath);
+        if (s.size >= MAX_SINK_BYTES) {
+          const dir = path.dirname(this.sinkPath);
+          const base = path.basename(this.sinkPath, ".ndjson");
+          renameSync(this.sinkPath, path.join(dir, `${base}.1.ndjson`));
+        }
+      } catch { /* file may not exist yet */ }
+      appendFileSync(this.sinkPath, `${line}\n`, "utf8");
+    } catch (err) {
+      if (!this.sinkErrorReported) {
+        this.sinkErrorReported = true;
+        console.error(`conduit: log sink write failed (${err instanceof Error ? err.message : String(err)})`);
+      }
+    }
   }
 }
 
@@ -23,4 +54,10 @@ class ChildLogger extends Logger {
   protected override emit(level: LogLevel, message: string, fields: Record<string, unknown>) {
     (this.parent as unknown as { emit(level: LogLevel, message: string, fields: Record<string, unknown>): void }).emit(level, message, { ...this.fields, ...fields });
   }
+}
+
+export function openLogSink(sinkPath: string): string {
+  mkdirSync(path.dirname(sinkPath), { recursive: true });
+  writeFileSync(sinkPath, "");
+  return sinkPath;
 }

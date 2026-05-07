@@ -5,11 +5,12 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadDotEnv, discoverWorkflow, loadWorkflow, buildConfig, validateForDispatch } from "../config/workflow.js";
-import { Logger, type LogLevel } from "../logging/logger.js";
+import { Logger, openLogSink, type LogLevel } from "../logging/logger.js";
 import { FakeTracker } from "../tracker/fake.js";
 import type { IssueTracker } from "../tracker/tracker.js";
 import { FakeAgentRunner, type AgentRunner } from "../agent/runner.js";
 import { Orchestrator } from "../orchestrator/orchestrator.js";
+import { runReport } from "./report.js";
 
 type Args = { command: string; flags: Record<string, string | boolean> };
 
@@ -77,6 +78,17 @@ async function appendGitIgnore(repo: string) {
   await writeFile(file, `${existing}${existing.endsWith("\n") || existing.length === 0 ? "" : "\n"}${missing.join("\n")}\n`);
 }
 
+async function tryDetectWorkspaceRoot(repo: string, flags: Record<string, string | boolean>): Promise<string | undefined> {
+  try {
+    const workflowPath = await discoverWorkflow(repo, flag(flags, "workflow"));
+    if (!existsSync(workflowPath)) return undefined;
+    const workflow = await loadWorkflow(workflowPath);
+    return buildConfig(workflow, repo).workspace.root;
+  } catch {
+    return undefined;
+  }
+}
+
 async function loadPlugin<T>(role: "tracker" | "runner", kind: string, config: ReturnType<typeof buildConfig>): Promise<T> {
   const pkg = `@conduit-harness/conduit-${role}-${kind}`;
   try {
@@ -94,6 +106,23 @@ async function main() {
   if (args.command === "help" || args.flags.help) return usage();
   if (args.command === "version" || args.flags.version) { console.log(await version()); return; }
   if (args.command === "init") { await init(args.flags); return; }
+  if (args.command === "report") {
+    const repoForReport = resolvePath(process.cwd(), flag(args.flags, "repo") ?? ".");
+    const workspaceRoot = await tryDetectWorkspaceRoot(repoForReport, args.flags);
+    const code = await runReport({
+      repo: repoForReport,
+      ...(flag(args.flags, "logs-dir") ? { logsDir: resolvePath(repoForReport, flag(args.flags, "logs-dir")!) } : {}),
+      ...(workspaceRoot ? { workspaceRoot } : {}),
+      ...(flag(args.flags, "domain") ? { domain: flag(args.flags, "domain")! } : {}),
+      ...(flag(args.flags, "type") ? { type: flag(args.flags, "type")! } : {}),
+      ...(flag(args.flags, "out") ? { out: resolvePath(process.cwd(), flag(args.flags, "out")!) } : {}),
+      gh: !!args.flags.gh,
+      noConfirm: !!args.flags["no-confirm"],
+      conduitVersion: await version(),
+    });
+    if (code !== 0) process.exit(code);
+    return;
+  }
 
   const repo = resolvePath(process.cwd(), flag(args.flags, "repo") ?? ".");
   await loadDotEnv(resolvePath(repo, flag(args.flags, "env") ?? ".env"));
@@ -101,7 +130,11 @@ async function main() {
   const workflow = await loadWorkflow(workflowPath);
   const stateRoot = flag(args.flags, "state-dir");
   const config = buildConfig(workflow, repo, stateRoot ? { stateRoot } : {});
-  const logger = new Logger((flag(args.flags, "log-level") as LogLevel | undefined) ?? "info");
+  const logLevel = (flag(args.flags, "log-level") as LogLevel | undefined) ?? "info";
+  const sinkPath = (args.command === "once" || args.command === "start") && !args.flags["no-log-file"]
+    ? openLogSink(path.join(config.logs.root, "last-run.ndjson"))
+    : undefined;
+  const logger = new Logger(logLevel, sinkPath ? { sinkPath } : {});
 
   if (args.command === "validate") {
     validateForDispatch(config);
@@ -132,7 +165,7 @@ async function main() {
 }
 
 function usage(exitCode = 0) {
-  console.log(`Usage: conduit <init|validate|once|start|version> [options]\n\nCommands:\n  init       Create local workflow/env starter files\n  validate   Parse and validate workflow/configuration\n  once       Run one fetch/filter/dispatch cycle\n  start      Run the polling loop continuously\n  version    Print the Conduit package version\n\nOptions:\n  --workflow PATH       Workflow markdown path\n  --repo PATH           Target repository path\n  --env PATH            Dotenv file path\n  --state-dir PATH      Runtime state directory override\n  --dry-run             Select issues without dispatching agents\n  --preflight           Validate required external integration settings\n  --log-level LEVEL     debug|info|warn|error\n  --force               init: overwrite existing files\n  --fake                init: use fake local workflow instead of Linear/Codex example\n  --gitignore           init: append Conduit ignore rules to target .gitignore\n  --version             Print version\n`);
+  console.log(`Usage: conduit <init|validate|once|start|report|version> [options]\n\nCommands:\n  init       Create local workflow/env starter files\n  validate   Parse and validate workflow/configuration\n  once       Run one fetch/filter/dispatch cycle\n  start      Run the polling loop continuously\n  report     Draft a sanitized GitHub issue from the latest run\n  version    Print the Conduit package version\n\nOptions:\n  --workflow PATH       Workflow markdown path\n  --repo PATH           Target repository path\n  --env PATH            Dotenv file path\n  --state-dir PATH      Runtime state directory override\n  --dry-run             Select issues without dispatching agents\n  --preflight           Validate required external integration settings\n  --log-level LEVEL     debug|info|warn|error\n  --no-log-file         once/start: do not write .conduit/logs/last-run.ndjson\n  --force               init: overwrite existing files\n  --fake                init: use fake local workflow instead of Linear/Codex example\n  --gitignore           init: append Conduit ignore rules to target .gitignore\n  --gh                  report: file via the gh CLI instead of opening a URL\n  --out PATH            report: write the redacted body to a file\n  --no-confirm          report: skip the interactive preview/confirmation\n  --domain VALUE        report: pre-fill the issue template Domain field (default: Core)\n  --type VALUE          report: pre-fill the issue template Type field\n  --logs-dir PATH       report: override the directory containing last-run.ndjson\n  --version             Print version\n`);
   process.exit(exitCode);
 }
 

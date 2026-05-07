@@ -94,6 +94,7 @@ function createTestConfig(overrides: Partial<ServiceConfig> = {}): ServiceConfig
     polling: { intervalMs: 30000 },
     workspace: { root: "/workspaces", strategy: "git-worktree", baseRef: "main" },
     state: { root: "/state" },
+    logs: { root: "/logs" },
     hooks: { afterCreate: undefined, beforeRun: undefined, afterRun: undefined, beforeRemove: undefined, timeoutMs: 300000 },
     agent: { kind: "fake", maxConcurrentAgents: 10, maxAttempts: 0, maxRetryBackoffMs: 60000, maxConcurrentAgentsByState: {}, raw: {} },
     ...overrides,
