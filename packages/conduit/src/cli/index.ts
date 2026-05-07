@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadDotEnv, discoverWorkflow, loadWorkflow, buildConfig, validateForDispatch } from "../config/workflow.js";
 import { Logger, type LogLevel } from "../logging/logger.js";
+import { FileLogSink } from "../logging/file-sink.js";
 import { FakeTracker } from "../tracker/fake.js";
 import type { IssueTracker } from "../tracker/tracker.js";
 import { FakeAgentRunner, type AgentRunner } from "../agent/runner.js";
@@ -70,7 +71,7 @@ async function copyFileIfAllowed(source: string, target: string, force: boolean)
 
 async function appendGitIgnore(repo: string) {
   const file = path.join(repo, ".gitignore");
-  const rules = [".env", ".env.*", "!.env.example", ".conduit/state/", ".conduit/workspaces/"];
+  const rules = [".env", ".env.*", "!.env.example", ".conduit/state/", ".conduit/workspaces/", ".conduit/logs/"];
   const existing = existsSync(file) ? await readFile(file, "utf8") : "";
   const missing = rules.filter(rule => !existing.split(/\r?\n/).includes(rule));
   if (missing.length === 0) return;
@@ -115,11 +116,34 @@ async function main() {
     return;
   }
 
+  if (args.command === "report") {
+    const logPath = path.join(config.logs.root, "last-run.ndjson");
+    if (!existsSync(logPath)) {
+      console.log("No log file found. Was the run started with --no-log-file?");
+      return;
+    }
+    const lines = (await readFile(logPath, "utf8")).split("\n").filter(Boolean);
+    for (const line of lines) {
+      try {
+        const entry = JSON.parse(line) as Record<string, unknown>;
+        const { ts, level, message, ...rest } = entry;
+        const extras = Object.keys(rest).length > 0 ? " " + JSON.stringify(rest) : "";
+        console.log(`${ts} [${level}] ${message}${extras}`);
+      } catch {
+        console.log(line);
+      }
+    }
+    return;
+  }
+
   if (args.command !== "once" && args.command !== "start") return usage(1);
   if (!args.flags["dry-run"]) validateForDispatch(config);
   const tracker: IssueTracker = config.tracker.kind === "fake" ? new FakeTracker(config) : await loadPlugin<IssueTracker>("tracker", config.tracker.kind, config);
   const agent: AgentRunner = config.agent.kind === "fake" ? new FakeAgentRunner() : await loadPlugin<AgentRunner>("runner", config.agent.kind, config);
-  const orch = new Orchestrator(config, workflow, tracker, agent, logger);
+  const noLogFile = !!args.flags["no-log-file"];
+  const sink = noLogFile ? undefined : new FileLogSink(config.logs.root);
+  const runLogger = sink ? new Logger((flag(args.flags, "log-level") as LogLevel | undefined) ?? "info", sink) : logger;
+  const orch = new Orchestrator(config, workflow, tracker, agent, runLogger);
 
   if (args.command === "once") { await orch.tick({ dryRun: !!args.flags["dry-run"] }); return; }
   let stopped = false;
@@ -132,7 +156,7 @@ async function main() {
 }
 
 function usage(exitCode = 0) {
-  console.log(`Usage: conduit <init|validate|once|start|version> [options]\n\nCommands:\n  init       Create local workflow/env starter files\n  validate   Parse and validate workflow/configuration\n  once       Run one fetch/filter/dispatch cycle\n  start      Run the polling loop continuously\n  version    Print the Conduit package version\n\nOptions:\n  --workflow PATH       Workflow markdown path\n  --repo PATH           Target repository path\n  --env PATH            Dotenv file path\n  --state-dir PATH      Runtime state directory override\n  --dry-run             Select issues without dispatching agents\n  --preflight           Validate required external integration settings\n  --log-level LEVEL     debug|info|warn|error\n  --force               init: overwrite existing files\n  --fake                init: use fake local workflow instead of Linear/Codex example\n  --gitignore           init: append Conduit ignore rules to target .gitignore\n  --version             Print version\n`);
+  console.log(`Usage: conduit <init|validate|once|start|report|version> [options]\n\nCommands:\n  init       Create local workflow/env starter files\n  validate   Parse and validate workflow/configuration\n  once       Run one fetch/filter/dispatch cycle\n  start      Run the polling loop continuously\n  report     Print the last run log\n  version    Print the Conduit package version\n\nOptions:\n  --workflow PATH       Workflow markdown path\n  --repo PATH           Target repository path\n  --env PATH            Dotenv file path\n  --state-dir PATH      Runtime state directory override\n  --dry-run             Select issues without dispatching agents\n  --no-log-file         Disable the run-log file sink\n  --preflight           Validate required external integration settings\n  --log-level LEVEL     debug|info|warn|error\n  --force               init: overwrite existing files\n  --fake                init: use fake local workflow instead of Linear/Codex example\n  --gitignore           init: append Conduit ignore rules to target .gitignore\n  --version             Print version\n`);
   process.exit(exitCode);
 }
 

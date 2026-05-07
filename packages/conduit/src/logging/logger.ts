@@ -1,8 +1,9 @@
 export type LogLevel = "debug" | "info" | "warn" | "error";
+export type LogSink = { write(record: Record<string, unknown>): void };
 const rank: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, error: 40 };
 
 export class Logger {
-  constructor(private readonly level: LogLevel = "info") {}
+  constructor(private readonly level: LogLevel = "info", private readonly sink?: LogSink) {}
   child(fields: Record<string, unknown>): Logger {
     return new ChildLogger(this, fields);
   }
@@ -15,6 +16,7 @@ export class Logger {
     const record = { ts: new Date().toISOString(), level, message, ...fields };
     const line = JSON.stringify(record);
     if (level === "error") console.error(line); else console.log(line);
+    this.sink?.write(record);
   }
 }
 

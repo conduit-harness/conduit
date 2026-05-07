@@ -45,6 +45,7 @@ export type ServiceConfig = {
   polling: { intervalMs: number };
   workspace: { root: string; strategy: "git-worktree"; baseRef: string };
   state: { root: string };
+  logs: { root: string };
   hooks: { afterCreate: string | undefined; beforeRun: string | undefined; afterRun: string | undefined; beforeRemove: string | undefined; timeoutMs: number };
   agent: {
     kind: string;
