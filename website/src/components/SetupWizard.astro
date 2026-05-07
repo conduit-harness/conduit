@@ -85,7 +85,7 @@
               </select>
             </label>
             <label>RAM (GB): <output data-ram-display>16</output>
-              <input type="range" min="0" max="11" step="1" value="5" data-ram-input />
+              <input type="range" min="0" max="10" step="1" value="2" data-ram-input />
             </label>
             <label data-gpu-only hidden>GPU vendor
               <select data-input="hardware.gpu_vendor">
@@ -95,7 +95,7 @@
               </select>
             </label>
             <label data-gpu-only hidden>VRAM (GB): <output data-vram-display>12</output>
-              <input type="range" min="0" max="9" step="1" value="4" data-vram-input />
+              <input type="range" min="0" max="9" step="1" value="3" data-vram-input />
             </label>
           </div>
           <p class="hardware-note">
@@ -183,13 +183,13 @@
       });
     });
 
-    const RAM_STEPS = [4, 6, 8, 10, 12, 16, 20, 24, 32, 48, 72, 96];
+    const RAM_STEPS = [8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256];
     const ramInput = root.querySelector<HTMLInputElement>("[data-ram-input]");
     const ramDisplay = root.querySelector<HTMLElement>("[data-ram-display]");
     function syncRam() {
       if (!ramInput) return;
       const idx = Number.parseInt(ramInput.value, 10);
-      const gb = RAM_STEPS[Number.isFinite(idx) ? idx : 5] ?? 16;
+      const gb = RAM_STEPS[Number.isFinite(idx) ? idx : 2] ?? 16;
       state.inputs["hardware.ram_gb"] = String(gb);
       if (ramDisplay) ramDisplay.textContent = String(gb);
     }
@@ -201,13 +201,13 @@
       });
     }
 
-    const VRAM_STEPS = [4, 6, 8, 10, 12, 16, 20, 24, 32, 48];
+    const VRAM_STEPS = [4, 6, 8, 12, 16, 24, 32, 48, 64, 96];
     const vramInput = root.querySelector<HTMLInputElement>("[data-vram-input]");
     const vramDisplay = root.querySelector<HTMLElement>("[data-vram-display]");
     function syncVram() {
       if (!vramInput) return;
       const idx = Number.parseInt(vramInput.value, 10);
-      const gb = VRAM_STEPS[Number.isFinite(idx) ? idx : 4] ?? 12;
+      const gb = VRAM_STEPS[Number.isFinite(idx) ? idx : 3] ?? 12;
       state.inputs["hardware.vram_gb"] = String(gb);
       if (vramDisplay) vramDisplay.textContent = String(gb);
     }

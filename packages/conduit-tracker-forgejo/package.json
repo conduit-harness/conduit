@@ -12,6 +12,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/conduit-harness/conduit.git" },
   "publishConfig": { "access": "public" },
   "engines": { "node": ">=24.0.0" },
   "peerDependencies": { "@conduit-harness/conduit": ">=0.0.1" },

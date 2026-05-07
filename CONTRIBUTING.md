@@ -154,10 +154,46 @@ Commit early and often. Each commit should group logically related files — all
 
 PRs are merged via squash commit, so the branch history does not survive into `main`. What matters is that the squash commit message clearly describes the change as a whole. Within the branch, prefer more commits over fewer.
 
-Use short imperative commit messages, for example:
+### Conventional Commits
+
+Conduit follows the [Conventional Commits](https://www.conventionalcommits.org/) specification for both commit messages and squashed PR titles. The format is:
 
 ```text
-Improve external state directory recovery semantics
-Fix Linear team state lookup
-Document non-intrusive target repo setup
+<type>(<scope>): <short imperative description>
 ```
+
+Use one of these types:
+
+- `feat` — a new user-facing capability
+- `fix` — a bug fix
+- `docs` — documentation-only changes (READMEs, blog posts, in-repo docs)
+- `refactor` — code restructuring with no behavioural change
+- `test` — adding or improving tests
+- `chore` — tooling, CI, dependency bumps, release plumbing
+- `perf` — performance work that is not a bug fix
+- `revert` — reverting a previous commit
+
+Pick the most specific scope that applies. Common scopes:
+
+- A package suffix: `orchestrator`, `tracker-github`, `runner-aider`, `wizard`, `website`, `examples`
+- A cross-cutting area: `cli`, `config`, `release`, `ci`
+
+Examples taken from this repo's history:
+
+```text
+feat(orchestrator): hot-reload workflow.md on each poll tick
+docs(examples): add commit/push/PR guidance to workflow templates
+fix(tracker-linear): normalize team state lookup
+refactor(wizard): collapse hardware section into expander
+chore(release): drop implicit latest dist-tag on first preview
+```
+
+Breaking changes are marked with a `!` after the type/scope and explained in a `BREAKING CHANGE:` footer:
+
+```text
+feat(config)!: rename `agent.kind` to `runner.kind`
+
+BREAKING CHANGE: workflow files using `agent.kind` must be updated to `runner.kind`.
+```
+
+Keep the subject line under 72 characters, imperative mood, no trailing period. Use the body for the *why* when it is not obvious from the diff.
