@@ -233,6 +233,7 @@ async function main() {
   const agent: AgentRunner = config.agent.kind === "fake" ? new FakeAgentRunner() : await loadPlugin<AgentRunner>("runner", config.agent.kind, config);
   const orch = new Orchestrator(config, workflow, tracker, agent, logger);
   logger.info("run starting", { command: args.command, tracker: config.tracker.kind, agent: config.agent.kind, repo: config.repoPath, logFile: sink ? defaultLogPath(repo) : null });
+  if (!args.flags["dry-run"]) await orch.recoverStaleAttempts();
 
   if (args.command === "once") { await orch.tick({ dryRun: !!args.flags["dry-run"] }); return; }
   let stopped = false;

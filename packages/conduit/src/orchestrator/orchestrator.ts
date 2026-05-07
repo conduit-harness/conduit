@@ -42,11 +42,18 @@ export class Orchestrator {
     }
     await Promise.all(dispatchable.map(issue => this.dispatch(issue)));
   }
+  async recoverStaleAttempts(maxAgeMs: number = 60 * 60 * 1000): Promise<void> {
+    const recovered = await this.state.recoverStaleAttempts(maxAgeMs);
+    for (const a of recovered) {
+      this.logger.warn("stale attempt recovered", { issue: a.issueIdentifier, attempt: a.attempt, startedAt: a.startedAt, error: a.error });
+    }
+  }
   private async dispatch(issue: Issue) {
     const prior = (await this.state.load()).attempts.filter(a => a.issueId === issue.id).length;
     const attemptNo = prior + 1;
     const workspace = await this.workspaces.prepare(issue, attemptNo);
     const attempt: RunAttempt = { id: `${issue.id}-${Date.now()}`, issueId: issue.id, issueIdentifier: issue.identifier, attempt: attemptNo, workspacePath: workspace.path, branchName: workspace.branchName, startedAt: new Date().toISOString(), status: "running" };
+    await this.state.upsertAttempt(attempt);
     await this.safeWrite("on_start", issue, `Conduit started attempt ${attemptNo} on branch ${workspace.branchName}.`);
     const prompt = renderPrompt(this.workflow.promptTemplate, { issue, workspace, attempt, config: this.config });
     this.logger.info("agent starting", { issue: issue.identifier, attempt: attemptNo, workspace: workspace.path });
@@ -58,7 +65,7 @@ export class Orchestrator {
     this.logger.info("llm response received", { issue: issue.identifier, status: result.status, outputChars: log.length });
     const finalAttempt: RunAttempt = { ...attempt, status: result.status, finishedAt: new Date().toISOString() };
     if (result.error) finalAttempt.error = result.error;
-    await this.state.appendAttempt(finalAttempt);
+    await this.state.upsertAttempt(finalAttempt);
     const event = result.status === "succeeded" ? "on_success" : "on_terminal_failure";
     const comment = this.composeComment(attemptNo, result, workspace, duration);
     await this.safeWrite(event, issue, comment);
