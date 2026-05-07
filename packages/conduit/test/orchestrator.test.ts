@@ -1,4 +1,7 @@
 import { describe, it, expect } from "vitest";
+import { tmpdir } from "node:os";
+import { writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import type { Issue, ServiceConfig, RunAttempt, PersistedState, Workspace } from "../src/domain/types.js";
 import type { IssueTracker } from "../src/tracker/tracker.js";
 import type { AgentRunner } from "../src/agent/runner.js";
@@ -286,6 +289,46 @@ describe("given max_attempts: 3 and a persistently failing agent", () => {
       expect(callCount).toBe(3);
       await orch.tick();
       expect(callCount).toBe(3);
+    });
+  });
+});
+
+describe("given workflow.md is updated between ticks", () => {
+  describe("when a second tick runs", () => {
+    it("then the updated config takes effect on the next poll", async () => {
+      const tmpFile = join(tmpdir(), `conduit-workflow-test-${Date.now()}.md`);
+      await writeFile(tmpFile, `---\nagent:\n  kind: fake\n  max_concurrent_agents: 1\n---\nTest prompt\n`);
+
+      const config = createTestConfig({ workflowPath: tmpFile, agent: { ...createTestConfig().agent, maxConcurrentAgents: 1 } });
+      const tracker = new FakeIssueTracker();
+      tracker.setCandidateIssues([
+        createTestIssue({ id: "issue-1", identifier: "TEST-1", priority: 1 }),
+        createTestIssue({ id: "issue-2", identifier: "TEST-2", priority: 2 }),
+      ]);
+      let callCount = 0;
+      const { orch } = makeOrchestrator(config, tracker, { run: async () => { callCount++; return { status: "succeeded", output: "done" }; } });
+
+      await orch.tick();
+      expect(callCount).toBe(1);
+
+      await writeFile(tmpFile, `---\nagent:\n  kind: fake\n  max_concurrent_agents: 2\n---\nTest prompt\n`);
+
+      await orch.tick();
+      expect(callCount).toBe(3); // 1 from tick 1 + 2 from tick 2 (both issues dispatched)
+    });
+  });
+});
+
+describe("given workflow.md cannot be read during a tick", () => {
+  describe("when a tick runs", () => {
+    it("then the last known-good config is used and the tick completes", async () => {
+      const config = createTestConfig({ workflowPath: "/nonexistent/path/workflow.md" });
+      const tracker = new FakeIssueTracker();
+      tracker.setCandidateIssues([createTestIssue()]);
+      let called = false;
+      const { orch } = makeOrchestrator(config, tracker, { run: async () => { called = true; return { status: "succeeded", output: "done" }; } });
+      await orch.tick();
+      expect(called).toBe(true);
     });
   });
 });
