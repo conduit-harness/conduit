@@ -14,11 +14,27 @@ class InMemoryStateStore {
   async load(): Promise<PersistedState> {
     return { ...this.state, attempts: [...this.state.attempts], completedIssueIds: [...this.state.completedIssueIds] };
   }
-  async appendAttempt(attempt: RunAttempt): Promise<void> {
-    this.state.attempts.push(attempt);
-    if (attempt.status === "succeeded") {
+  async upsertAttempt(attempt: RunAttempt): Promise<void> {
+    const idx = this.state.attempts.findIndex(a => a.issueId === attempt.issueId && a.attempt === attempt.attempt);
+    if (idx >= 0) this.state.attempts[idx] = attempt;
+    else this.state.attempts.push(attempt);
+    if (attempt.status === "succeeded" && !this.state.completedIssueIds.includes(attempt.issueId)) {
       this.state.completedIssueIds.push(attempt.issueId);
     }
+  }
+  async recoverStaleAttempts(maxAgeMs: number): Promise<RunAttempt[]> {
+    const now = Date.now();
+    const recovered: RunAttempt[] = [];
+    for (const a of this.state.attempts) {
+      if (a.status !== "running") continue;
+      const age = now - new Date(a.startedAt).getTime();
+      if (!Number.isFinite(age) || age <= maxAgeMs) continue;
+      a.status = "failed";
+      a.finishedAt = new Date().toISOString();
+      a.error = `Recovered as stale after ${Math.round(age / 1000)}s — the prior process did not record completion.`;
+      recovered.push(a);
+    }
+    return recovered;
   }
 }
 
@@ -329,6 +345,91 @@ describe("given workflow.md cannot be read during a tick", () => {
       const { orch } = makeOrchestrator(config, tracker, { run: async () => { called = true; return { status: "succeeded", output: "done" }; } });
       await orch.tick();
       expect(called).toBe(true);
+    });
+  });
+});
+
+describe("given a slow agent run and a second tick that fires before it completes", () => {
+  describe("when the second tick runs concurrently", () => {
+    it("then the issue is not re-dispatched (write-ahead state prevents the duplicate)", async () => {
+      const config = createTestConfig();
+      const tracker = new FakeIssueTracker();
+      tracker.setConfig(config);
+      tracker.setCandidateIssues([createTestIssue()]);
+      let callCount = 0;
+      const slowRunner: AgentRunner = {
+        run: async () => {
+          callCount++;
+          await new Promise(r => setTimeout(r, 80));
+          return { status: "succeeded", output: "done" };
+        },
+      };
+      const { orch, stateStore } = makeOrchestrator(config, tracker, slowRunner);
+      const t1 = orch.tick();
+      // Yield enough for tick 1's dispatch() to write the running attempt before tick 2 reads state.
+      await new Promise(r => setTimeout(r, 10));
+      const t2 = orch.tick();
+      await Promise.all([t1, t2]);
+      expect(callCount).toBe(1);
+      const attempts = (await stateStore.load()).attempts.filter((a: RunAttempt) => a.issueId === "issue-1");
+      expect(attempts).toHaveLength(1);
+      expect(attempts[0].status).toBe("succeeded");
+    });
+  });
+});
+
+describe("given a stale running attempt left over from a crashed prior process", () => {
+  describe("when recoverStaleAttempts is called and a tick runs", () => {
+    it("then the stale attempt is marked failed and the issue is re-dispatchable", async () => {
+      const config = createTestConfig();
+      const tracker = new FakeIssueTracker();
+      tracker.setConfig(config);
+      tracker.setCandidateIssues([createTestIssue()]);
+      const { orch, stateStore } = makeOrchestrator(config, tracker, { run: async () => ({ status: "succeeded", output: "done" }) });
+      const stale: RunAttempt = {
+        id: "issue-1-stale",
+        issueId: "issue-1",
+        issueIdentifier: "TEST-1",
+        attempt: 1,
+        workspacePath: "/workspace/issue-1/1",
+        branchName: "conduit/test-1/1",
+        startedAt: new Date(Date.now() - 7200_000).toISOString(),
+        status: "running",
+      };
+      await stateStore.upsertAttempt(stale);
+      await orch.recoverStaleAttempts(60 * 60 * 1000);
+      const afterRecovery = (await stateStore.load()).attempts.find((a: RunAttempt) => a.id === "issue-1-stale");
+      expect(afterRecovery?.status).toBe("failed");
+      expect(afterRecovery?.error).toMatch(/stale/i);
+      await orch.tick();
+      const attempts = (await stateStore.load()).attempts.filter((a: RunAttempt) => a.issueId === "issue-1");
+      expect(attempts).toHaveLength(2);
+      expect(attempts[1].status).toBe("succeeded");
+    });
+  });
+});
+
+describe("given a fresh running attempt within the recovery threshold", () => {
+  describe("when recoverStaleAttempts is called", () => {
+    it("then the attempt is left alone", async () => {
+      const config = createTestConfig();
+      const tracker = new FakeIssueTracker();
+      tracker.setConfig(config);
+      const { orch, stateStore } = makeOrchestrator(config, tracker, { run: async () => ({ status: "succeeded", output: "done" }) });
+      const fresh: RunAttempt = {
+        id: "issue-1-fresh",
+        issueId: "issue-1",
+        issueIdentifier: "TEST-1",
+        attempt: 1,
+        workspacePath: "/workspace/issue-1/1",
+        branchName: "conduit/test-1/1",
+        startedAt: new Date(Date.now() - 60_000).toISOString(),
+        status: "running",
+      };
+      await stateStore.upsertAttempt(fresh);
+      await orch.recoverStaleAttempts(60 * 60 * 1000);
+      const after = (await stateStore.load()).attempts.find((a: RunAttempt) => a.id === "issue-1-fresh");
+      expect(after?.status).toBe("running");
     });
   });
 });
