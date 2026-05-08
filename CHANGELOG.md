@@ -13,6 +13,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `CHANGELOG.md` (this file).
 - `DEVELOPMENT.md` describing the development cadence and pre-release flow.
 - `conduit report` subcommand: drafts a sanitized GitHub issue from the latest run. Reads `.conduit/logs/last-run.ndjson`, redacts known token shapes / sensitive keys / home + workspace paths, prints a confirmation preview, then either prints a pre-filled issue-form URL (default), shells out to `gh issue create --gh`, or writes the body to `--out PATH`. `conduit once` and `conduit start` now also persist their NDJSON log to `.conduit/logs/last-run.ndjson` (5 MB cap with single-file rotation, truncated on each invocation). `conduit init --gitignore` now adds `.conduit/logs/` to the rules it appends.
+- `logs.root` workflow config field (default `.conduit/logs`) — redirects the run-log file sink. Supports relative (resolved against the repo root) and absolute paths, with `~` home expansion. `conduit report` reads from the same configured root.
+- `--no-log-file` flag on `conduit once` / `conduit start` — disables the file sink for ephemeral runs or environments where writing into the working directory is undesirable. Default behavior (sink on) is unchanged.
+- `tools/smoke-docker/` — minimal Node 24 / Debian 12 image for clean-machine install validation. Documents both `@next` / `@latest` smoke and locally-packed-tarball smoke modes.
 
 ### Changed
 - Abandoned the `0.0.2-rc2` release cycle in favor of going directly to `0.1.0`.

@@ -131,18 +131,17 @@ function truncate(text: string, max: number): string {
   return oneLine.length <= max ? oneLine : `${oneLine.slice(0, max - 1)}…`;
 }
 
-export async function readLastRunLog(repoPath: string): Promise<{ path: string; content: string; exists: boolean }> {
-  const logPath = path.join(repoPath, ".conduit/logs/last-run.ndjson");
-  if (!existsSync(logPath)) return { path: logPath, content: "", exists: false };
+export async function readLastRunLog(logFilePath: string): Promise<{ path: string; content: string; exists: boolean }> {
+  if (!existsSync(logFilePath)) return { path: logFilePath, content: "", exists: false };
   try {
-    return { path: logPath, content: await readFile(logPath, "utf8"), exists: true };
+    return { path: logFilePath, content: await readFile(logFilePath, "utf8"), exists: true };
   } catch {
-    return { path: logPath, content: "", exists: false };
+    return { path: logFilePath, content: "", exists: false };
   }
 }
 
-export function defaultLogPath(repoPath: string): string {
-  return path.join(repoPath, ".conduit/logs/last-run.ndjson");
+export function defaultLogPath(logsRoot: string): string {
+  return path.join(logsRoot, "last-run.ndjson");
 }
 
 export type BuildReportInput = {

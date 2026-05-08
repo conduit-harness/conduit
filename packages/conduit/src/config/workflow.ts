@@ -30,7 +30,7 @@ export async function loadWorkflow(workflowPath: string): Promise<WorkflowDefini
 
 const unknownRecord = z.record(z.string(), z.unknown());
 const rawSchema = z.object({
-  tracker: unknownRecord.optional(), polling: unknownRecord.optional(), workspace: unknownRecord.optional(), state: unknownRecord.optional(), hooks: unknownRecord.optional(), agent: unknownRecord.optional(),
+  tracker: unknownRecord.optional(), polling: unknownRecord.optional(), workspace: unknownRecord.optional(), state: unknownRecord.optional(), logs: unknownRecord.optional(), hooks: unknownRecord.optional(), agent: unknownRecord.optional(),
 }).passthrough();
 
 function stringList(value: unknown, fallback: string[]): string[] { return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : fallback; }
@@ -52,7 +52,7 @@ function resolveRawEnvRefs(raw: Record<string, unknown>): Record<string, unknown
 
 export function buildConfig(workflow: WorkflowDefinition, repoPath: string, overrides: { stateRoot?: string } = {}): ServiceConfig {
   const raw = rawSchema.parse(workflow.config);
-  const tracker = raw.tracker ?? {}; const polling = raw.polling ?? {}; const workspace = raw.workspace ?? {}; const state = raw.state ?? {}; const hooks = raw.hooks ?? {}; const agent = raw.agent ?? {};
+  const tracker = raw.tracker ?? {}; const polling = raw.polling ?? {}; const workspace = raw.workspace ?? {}; const state = raw.state ?? {}; const logs = raw.logs ?? {}; const hooks = raw.hooks ?? {}; const agent = raw.agent ?? {};
   const writesRaw = tracker.writes && typeof tracker.writes === "object" && !Array.isArray(tracker.writes) ? tracker.writes as Record<string, unknown> : {};
   const maxByStateRaw = agent.max_concurrent_agents_by_state && typeof agent.max_concurrent_agents_by_state === "object" && !Array.isArray(agent.max_concurrent_agents_by_state) ? agent.max_concurrent_agents_by_state as Record<string, unknown> : {};
   const maxByState: Record<string, number> = {};
@@ -75,6 +75,7 @@ export function buildConfig(workflow: WorkflowDefinition, repoPath: string, over
     polling: { intervalMs: intValue(polling.interval_ms, 30000) },
     workspace: { root: resolveConfiguredPath(repoPath, strValue(workspace.root, ".conduit/workspaces")), strategy: "git-worktree", baseRef: strValue(workspace.base_ref, "main") },
     state: { root: resolveConfiguredPath(repoPath, overrides.stateRoot ?? strValue(state.root, ".conduit/state")) },
+    logs: { root: resolveConfiguredPath(repoPath, strValue(logs.root, ".conduit/logs")) },
     hooks: optionalProps({ afterCreate: maybeStr(hooks.after_create), beforeRun: maybeStr(hooks.before_run), afterRun: maybeStr(hooks.after_run), beforeRemove: maybeStr(hooks.before_remove), timeoutMs: Math.max(1, intValue(hooks.timeout_ms, 60000)) }),
     agent: {
       kind: agentKind,
