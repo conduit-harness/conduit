@@ -11,3 +11,4 @@ website/.astro/
 website/dist/
 website/src/content/docs/api/
 .aider*
+.smoke/
