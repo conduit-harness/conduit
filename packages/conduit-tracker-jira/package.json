@@ -1,6 +1,6 @@
 {
   "name": "@conduit-harness/conduit-tracker-jira",
-  "version": "0.0.1",
+  "version": "0.1.0-preview.1",
   "description": "Conduit tracker plugin for Jira",
   "license": "MIT",
   "type": "module",
