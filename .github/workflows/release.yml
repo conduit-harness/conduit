@@ -79,6 +79,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build core
+        # Plugins (trackers/runners) import `@conduit-harness/conduit` and
+        # resolve types via the package's `exports → dist/index.d.ts`.
+        # Build core first so typecheck and test see the .d.ts files.
+        # Mirrors the same step in `build-test.yml`.
+        run: pnpm --filter @conduit-harness/conduit build
+
       - name: Typecheck
         run: pnpm typecheck
 

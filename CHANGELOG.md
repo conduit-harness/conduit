@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-05-09
+
+First validated public release. Same package surface as 0.0.x, hardened: real preflight, structured run logs, configurable logging, integration tests gating PRs.
+
 ### Added
 - `license` field on every `packages/*/package.json`.
 - README badges (npm version, weekly downloads, CI status, license).
@@ -44,5 +48,6 @@ Initial public release. Conduit ships as eight packages under `@conduit-harness/
 - `--dry-run` flag for `once` and `start`.
 - `--preflight` flag scaffolding (full implementation deferred to 0.1.0).
 
-[Unreleased]: https://github.com/conduit-harness/conduit/compare/v0.0.1...HEAD
+[Unreleased]: https://github.com/conduit-harness/conduit/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/conduit-harness/conduit/releases/tag/v0.1.0
 [0.0.1]: https://github.com/conduit-harness/conduit/releases/tag/v0.0.1
