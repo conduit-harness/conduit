@@ -81,6 +81,17 @@ async function appendGitIgnore(repo: string) {
   await writeFile(file, `${existing}${existing.endsWith("\n") || existing.length === 0 ? "" : "\n"}${missing.join("\n")}\n`);
 }
 
+async function resolveLogsRoot(repo: string, workflowFlag: string | undefined): Promise<string> {
+  try {
+    const workflowPath = await discoverWorkflow(repo, workflowFlag);
+    if (!existsSync(workflowPath)) return path.join(repo, ".conduit/logs");
+    const workflow = await loadWorkflow(workflowPath);
+    return buildConfig(workflow, repo).logs.root;
+  } catch {
+    return path.join(repo, ".conduit/logs");
+  }
+}
+
 async function loadPlugin<T>(role: "tracker" | "runner", kind: string, config: ReturnType<typeof buildConfig>): Promise<T> {
   const pkg = `@conduit-harness/conduit-${role}-${kind}`;
   try {
@@ -95,7 +106,8 @@ async function loadPlugin<T>(role: "tracker" | "runner", kind: string, config: R
 
 async function report(flags: Record<string, string | boolean>) {
   const repo = resolvePath(process.cwd(), flag(flags, "repo") ?? ".");
-  const { content, exists, path: logPath } = await readLastRunLog(repo);
+  const logsRoot = await resolveLogsRoot(repo, flag(flags, "workflow"));
+  const { content, exists, path: logPath } = await readLastRunLog(defaultLogPath(logsRoot));
   const conduitVersion = await readPackageVersion();
   const opts: ReportOptions = {
     homeDir: os.homedir(),
@@ -115,8 +127,8 @@ async function report(flags: Record<string, string | boolean>) {
   }
 
   if (!exists) {
-    process.stderr.write("No '.conduit/logs/last-run.ndjson' found — filing without a log.\n");
-    process.stderr.write(`(Run 'conduit once' first to capture a log at ${logPath}.)\n`);
+    process.stderr.write(`No log file found at ${logPath} — filing without a log.\n`);
+    process.stderr.write(`(Run 'conduit once' first to capture one. If the run was started with --no-log-file, no log was written.)\n`);
   }
 
   let body = built.body;
@@ -212,7 +224,9 @@ async function main() {
   const stateRoot = flag(args.flags, "state-dir");
   const config = buildConfig(workflow, repo, stateRoot ? { stateRoot } : {});
   const level = (flag(args.flags, "log-level") as LogLevel | undefined) ?? "info";
-  const sink = (args.command === "once" || args.command === "start") ? new FileLogSink(defaultLogPath(repo)) : undefined;
+  const noLogFile = !!args.flags["no-log-file"];
+  const sinkPath = (args.command === "once" || args.command === "start") && !noLogFile ? defaultLogPath(config.logs.root) : null;
+  const sink = sinkPath ? new FileLogSink(sinkPath) : undefined;
   const logger = sink ? new Logger(level, sink) : new Logger(level);
 
   if (args.command === "validate") {
@@ -232,7 +246,7 @@ async function main() {
   const tracker: IssueTracker = config.tracker.kind === "fake" ? new FakeTracker(config) : await loadPlugin<IssueTracker>("tracker", config.tracker.kind, config);
   const agent: AgentRunner = config.agent.kind === "fake" ? new FakeAgentRunner() : await loadPlugin<AgentRunner>("runner", config.agent.kind, config);
   const orch = new Orchestrator(config, workflow, tracker, agent, logger);
-  logger.info("run starting", { command: args.command, tracker: config.tracker.kind, agent: config.agent.kind, repo: config.repoPath, logFile: sink ? defaultLogPath(repo) : null });
+  logger.info("run starting", { command: args.command, tracker: config.tracker.kind, agent: config.agent.kind, repo: config.repoPath, logFile: sinkPath });
   if (!args.flags["dry-run"]) await orch.recoverStaleAttempts();
 
   if (args.command === "once") { await orch.tick({ dryRun: !!args.flags["dry-run"] }); return; }
@@ -246,7 +260,7 @@ async function main() {
 }
 
 function usage(exitCode = 0) {
-  console.log(`Usage: conduit <init|validate|once|start|report|version> [options]\n\nCommands:\n  init       Create local workflow/env starter files\n  validate   Parse and validate workflow/configuration\n  once       Run one fetch/filter/dispatch cycle\n  start      Run the polling loop continuously\n  report     Draft a sanitized GitHub issue from the latest run log\n  version    Print the Conduit package version\n\nOptions:\n  --workflow PATH       Workflow markdown path\n  --repo PATH           Target repository path\n  --env PATH            Dotenv file path\n  --state-dir PATH      Runtime state directory override\n  --dry-run             Select issues without dispatching agents\n  --preflight           Validate required external integration settings\n  --log-level LEVEL     debug|info|warn|error\n  --force               init: overwrite existing files\n  --fake                init: use fake local workflow instead of Linear/Codex example\n  --gitignore           init: append Conduit ignore rules to target .gitignore\n  --gh                  report: file via gh CLI instead of printing a URL\n  --out PATH            report: also write the redacted body to PATH\n  --no-confirm          report: skip the y/N/edit prompt (still prints preview to stderr)\n  --domain VALUE        report: override the issue Domain field (default: Core)\n  --type VALUE          report: override the issue Type field (default: Bug)\n  --title VALUE         report: override the issue title\n  --version             Print version\n`);
+  console.log(`Usage: conduit <init|validate|once|start|report|version> [options]\n\nCommands:\n  init       Create local workflow/env starter files\n  validate   Parse and validate workflow/configuration\n  once       Run one fetch/filter/dispatch cycle\n  start      Run the polling loop continuously\n  report     Draft a sanitized GitHub issue from the latest run log\n  version    Print the Conduit package version\n\nOptions:\n  --workflow PATH       Workflow markdown path\n  --repo PATH           Target repository path\n  --env PATH            Dotenv file path\n  --state-dir PATH      Runtime state directory override\n  --dry-run             Select issues without dispatching agents\n  --no-log-file         Disable the run-log file sink for once/start\n  --preflight           Validate required external integration settings\n  --log-level LEVEL     debug|info|warn|error\n  --force               init: overwrite existing files\n  --fake                init: use fake local workflow instead of Linear/Codex example\n  --gitignore           init: append Conduit ignore rules to target .gitignore\n  --gh                  report: file via gh CLI instead of printing a URL\n  --out PATH            report: also write the redacted body to PATH\n  --no-confirm          report: skip the y/N/edit prompt (still prints preview to stderr)\n  --domain VALUE        report: override the issue Domain field (default: Core)\n  --type VALUE          report: override the issue Type field (default: Bug)\n  --title VALUE         report: override the issue title\n  --version             Print version\n`);
   process.exit(exitCode);
 }
 
