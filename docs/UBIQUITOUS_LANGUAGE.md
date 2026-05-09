@@ -56,7 +56,8 @@ Reference: `packages/conduit/src/domain/types.ts:58`
 
 ### Run Attempt (Attempt)
 One execution of an agent against one issue, numbered per-issue starting at 1.
-Carries `status` (`running` | `succeeded` | `failed` | `timed_out`),
+Carries `status` (`running` | `succeeded` | `failed` | `timed_out`; and, when
+plan-first mode is active, `pending_plan_approval` | `plan_rejected`),
 timestamps, the workspace path, and an optional error. Use "attempt" in prose
 and `RunAttempt` for the type. Avoid: "agent run" as a noun ("the run") —
 prefer "the attempt".
@@ -208,10 +209,52 @@ write does not by itself fail the attempt.
 Reference: `packages/conduit/src/domain/types.ts:22`
 
 ### Lifecycle Event
-The moment at which a tracker write fires. Exactly four events:
-`on_start`, `on_success`, `on_failure`, `on_terminal_failure`. Each event
-maps to an optional `TrackerWriteAction` (`comment` and/or `transition_to`).
+The moment at which a tracker write fires. Four standard events:
+`on_start`, `on_success`, `on_failure`, `on_terminal_failure`. When
+plan-first mode is enabled a fifth event, `on_plan`, fires after the plan
+phase completes and before the execute phase begins. Each event maps to an
+optional `TrackerWriteAction` (`comment` and/or `transition_to`).
 Reference: `packages/conduit/src/domain/types.ts:22`
+
+---
+
+## Plan-first mode
+
+### Plan-First Mode
+An optional dispatch mode enabled by `agent.plan_first: true` in the
+workflow. Every new dispatch is split into a plan phase (agent proposes
+work, no file changes) followed by a gated execute phase (agent makes
+changes). Human review happens between the two phases. Disabled by default
+— standard dispatch is single-phase.
+Reference: issues #126 (config), #127 (tracker interface), #128 (orchestrator)
+
+### Plan Phase
+The first half of a plan-first dispatch. The agent runs against the main
+prompt prefixed with a plan instruction and proposes work without touching
+any files. The orchestrator stores the proposal in `attempt.plan.content`
+and fires the `on_plan` lifecycle event, posting the plan as a tracker
+comment for human review.
+Reference: issue #128
+
+### Execute Phase
+The second half of a plan-first dispatch. The agent runs against the full
+prompt and makes code changes. Begins only after a human applies the
+configured approval label to the tracker issue.
+Reference: issue #128
+
+### Approval Signal / Rejection Signal
+A tracker label placed on an issue to accept or refuse a proposed plan.
+`agent.plan_approval_label` (default `conduit:approved`) signals approval;
+`agent.plan_rejection_label` (default `conduit:revise`) signals rejection.
+The orchestrator polls for these labels on each tick.
+Reference: issues #127 (tracker interface), #128 (orchestrator)
+
+### Pending Plan Approval
+An attempt status (`"pending_plan_approval"`) assigned after the plan
+phase completes. The issue is treated as claimed — it will not be
+re-dispatched — until the approval or rejection signal is detected on the
+next tick.
+Reference: issues #126 (types), #128 (orchestrator)
 
 ---
 
