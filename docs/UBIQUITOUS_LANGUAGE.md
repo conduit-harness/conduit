@@ -208,10 +208,45 @@ write does not by itself fail the attempt.
 Reference: `packages/conduit/src/domain/types.ts:22`
 
 ### Lifecycle Event
-The moment at which a tracker write fires. Exactly four events:
-`on_start`, `on_success`, `on_failure`, `on_terminal_failure`. Each event
-maps to an optional `TrackerWriteAction` (`comment` and/or `transition_to`).
-Reference: `packages/conduit/src/domain/types.ts:22`
+The moment at which a tracker write fires. Core events:
+`on_start`, `on_success`, `on_failure`, `on_terminal_failure`. When
+`agent.plan_first: true` (or per-issue `plan-first` label), the
+additional Conduit extension event `on_plan` fires when the agent posts
+its plan comment. Each event maps to an optional `TrackerWriteAction`
+(`comment` and/or `transition_to`).
+Reference: `packages/conduit/src/domain/types.ts:22`; see also
+`docs/adr/001-plan-first-handshake.md` for the `on_plan` extension.
+
+---
+
+## Plan handshake (0.2.0)
+
+### Plan Attempt
+
+A run attempt in which the agent produces a written plan rather than implementing the issue.
+The agent is prompted with `agent.plan_prompt_template` and must not make code changes; its
+output is stored as `RunAttempt.plan.content` and posted as a tracker comment via the `on_plan`
+lifecycle event. Use "plan attempt" in prose; the persisted field is `plan` on `RunAttempt`.
+Avoid: "planning run", "proposal", "preview". Use "plan" consistently.
+Reference: `docs/adr/001-plan-first-handshake.md` (0.2.0)
+
+### Plan Phase
+
+The first stage of a plan-first dispatch cycle: the orchestrator runs the agent with the
+planning prompt, posts the output as a tracker comment, then waits for an operator approval
+signal. Active only when `agent.plan_first: true` is set in the workflow or when the issue
+carries the `plan-first` label (configurable via `agent.plan_trigger_label`). The plan phase
+is followed by the execute phase when the `plan-approved` label is detected.
+Reference: `docs/adr/001-plan-first-handshake.md` (0.2.0)
+
+### Plan-first Mode
+
+The runtime state in which an issue undergoes a plan phase before execution. Enabled globally
+by `agent.plan_first: true` in the workflow, or per-issue by the `plan-first` label.
+Bypassed per-issue by `agent.plan_skip_label` (default: `"no-plan"`). When plan-first mode is
+active and no plan has been approved yet, the issue is in the plan phase; after approval, the
+orchestrator dispatches the execute phase.
+Reference: `packages/conduit/src/config/workflow.ts` (0.2.0)
 
 ---
 
