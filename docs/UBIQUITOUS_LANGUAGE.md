@@ -208,10 +208,42 @@ write does not by itself fail the attempt.
 Reference: `packages/conduit/src/domain/types.ts:22`
 
 ### Lifecycle Event
-The moment at which a tracker write fires. Exactly four events:
+The moment at which a tracker write fires. Core events:
 `on_start`, `on_success`, `on_failure`, `on_terminal_failure`. Each event
 maps to an optional `TrackerWriteAction` (`comment` and/or `transition_to`).
 Reference: `packages/conduit/src/domain/types.ts:22`
+
+---
+
+## Plan phase (0.2.0 extension)
+
+### Plan
+A structured proposal produced by the agent describing its intended approach
+to an issue — which files to change, key steps, and risks — before any code is
+written. Posted as a tracker comment. Use "plan" (lowercase) as a noun;
+"plan phase" for the lifecycle stage.
+Reference: `docs/design/plan-first.md`
+
+### Plan Phase
+The lifecycle stage between candidate selection and dispatch in which the
+agent posts a plan and the orchestrator waits for human approval. Only entered
+when `agent.plan_first: true` is set globally in the workflow, or when the
+issue carries the configured trigger label (default: `plan-first`).
+Reference: `docs/design/plan-first.md`
+
+### Plan Prompt
+The prompt template used to ask the agent for a plan only, without making
+changes. Configured via `plan_prompt_template` in the workflow front matter;
+a built-in default is used when the field is absent. Rendered with the same
+`issue.*` variables as the main prompt.
+Reference: `docs/design/plan-first.md`
+
+### Plan Approval
+A human approves the plan by adding the configured approval label (default:
+`plan-approved`) to the issue. The orchestrator detects the label on the next
+tick and proceeds to dispatch. A rejection label (default: `plan-rejected`)
+triggers a re-plan up to `agent.plan.max_revisions` times.
+Reference: `docs/design/plan-first.md`
 
 ---
 

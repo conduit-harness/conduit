@@ -2114,6 +2114,10 @@ Use the same validation profiles as Section 17:
 - TODO: Add first-class tracker write APIs (comments/state transitions) in the orchestrator instead
   of only via agent tools.
 - TODO: Add pluggable issue tracker adapters beyond Linear.
+- TODO: Add plan-then-execute handshake: agent posts a plan comment before any code changes; human
+  approves via tracker label; orchestrator gates dispatch on approval. Controlled by
+  `agent.plan_first` workflow flag and/or per-issue trigger label. See Conduit reference
+  implementation for the chosen design path.
 
 ### 18.3 Operational Validation Before Production (Recommended)
 
