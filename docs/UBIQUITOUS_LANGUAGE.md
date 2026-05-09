@@ -215,6 +215,56 @@ Reference: `packages/conduit/src/domain/types.ts:22`
 
 ---
 
+## Plan-then-execute (Conduit extension)
+
+These terms describe the optional plan-then-execute dispatch mode. This is a
+Conduit-specific feature and is not defined in the Symphony specification.
+
+### Plan-then-Execute
+A two-phase dispatch mode in which an agent first generates a **Plan** for
+human review before executing the task. Enabled per-workflow via
+`plan_then_execute.enabled: true` or per-issue via the configured
+`trigger_label` (default: `plan-first`). When active, a planning run
+precedes the normal execution run; the execution run is only dispatched
+after a human applies the `plan-approved` label.
+
+### Planning Phase
+The first phase of a plan-then-execute dispatch. The orchestrator runs a
+planning prompt — a prompt that instructs the agent to output only a
+structured approach and make no code changes — and posts the result as a
+tracker comment. The attempt then enters **AwaitingApproval**.
+
+### Plan
+The structured proposal produced by the Planning Phase. Persisted as a
+tracker comment and referenced in the `RunAttempt` by comment ID. A plan
+is an agent's proposed approach, not a code diff or a completed
+implementation.
+
+### AwaitingApproval
+An orchestration claim state (alongside `Running` and `RetryQueued`) in
+which an issue has completed the Planning Phase and is waiting for a human
+approval signal. Issues in `AwaitingApproval` hold their claim (preventing
+re-dispatch) but are not running an agent process.
+
+### `plan-approved` label
+The tracker label a human applies to signal approval of a Plan. When
+detected during reconciliation, Conduit removes the label and dispatches the
+execution run. Configurable via `plan_then_execute.approved_label`.
+
+### `plan-rejected` label
+The tracker label a human applies to signal rejection of a Plan. When
+detected, Conduit removes the label, posts a comment requesting
+clarification, and returns the issue to the pool for re-planning (up to
+`plan_then_execute.max_revisions` times). Configurable via
+`plan_then_execute.rejected_label`.
+
+### `plan-first` label
+The per-issue tracker label that opts a single issue into plan-then-execute
+mode regardless of the workflow-level `plan_then_execute.enabled` setting.
+Configurable via `plan_then_execute.trigger_label`.
+
+---
+
 ## CLI
 
 ### Conduit CLI
