@@ -254,10 +254,10 @@ describe("given --dry-run", () => {
   });
 });
 
-describe("given a succeeded issue the tracker still shows as open", () => {
+describe("given writes.enabled: true and a succeeded issue the tracker still shows as open", () => {
   describe("when a second tick runs", () => {
-    it("then the issue is re-dispatched (PR rejection / re-open scenario)", async () => {
-      const config = createTestConfig();
+    it("then the issue is re-dispatched (PR rejection / re-open scenario, tracker wins)", async () => {
+      const config = createTestConfig(); // writes.enabled: true by default
       const tracker = new FakeIssueTracker();
       tracker.setConfig(config);
       tracker.setCandidateIssues([createTestIssue()]);
@@ -268,6 +268,24 @@ describe("given a succeeded issue the tracker still shows as open", () => {
       // Tracker still returns the issue — simulates PR rejection + issue re-opened
       await orch.tick();
       expect(callCount).toBe(2);
+    });
+  });
+});
+
+describe("given writes.enabled: false and a succeeded issue the tracker still shows as open", () => {
+  describe("when a second tick runs", () => {
+    it("then the issue is not re-dispatched (hard stop — tracker cannot close it)", async () => {
+      const config = createTestConfig({ tracker: { ...createTestConfig().tracker, writes: { enabled: false, actions: {} } } });
+      const tracker = new FakeIssueTracker();
+      tracker.setConfig(config);
+      tracker.setCandidateIssues([createTestIssue()]);
+      let callCount = 0;
+      const { orch } = makeOrchestrator(config, tracker, { run: async () => { callCount++; return { status: "succeeded", output: "done" }; } });
+      await orch.tick();
+      expect(callCount).toBe(1);
+      // Tracker still returns the issue (writes disabled — no transition fired)
+      await orch.tick();
+      expect(callCount).toBe(1);
     });
   });
 });
@@ -320,17 +338,18 @@ describe("given workflow.md is updated between ticks", () => {
       tracker.setCandidateIssues([
         createTestIssue({ id: "issue-1", identifier: "TEST-1", priority: 1 }),
         createTestIssue({ id: "issue-2", identifier: "TEST-2", priority: 2 }),
+        createTestIssue({ id: "issue-3", identifier: "TEST-3", priority: 3 }),
       ]);
       let callCount = 0;
       const { orch } = makeOrchestrator(config, tracker, { run: async () => { callCount++; return { status: "succeeded", output: "done" }; } });
 
       await orch.tick();
-      expect(callCount).toBe(1);
+      expect(callCount).toBe(1); // only issue-1 dispatched (maxConcurrentAgents: 1)
 
       await writeFile(tmpFile, `---\nagent:\n  kind: fake\n  max_concurrent_agents: 2\n---\nTest prompt\n`);
 
       await orch.tick();
-      expect(callCount).toBe(3); // 1 from tick 1 + 2 from tick 2 (both issues dispatched)
+      expect(callCount).toBe(3); // issue-2 + issue-3 dispatched (maxConcurrentAgents: 2 now in effect)
     });
   });
 });

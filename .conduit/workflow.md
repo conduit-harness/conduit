@@ -7,7 +7,7 @@ tracker:
   active_states: [open]
   terminal_states: [closed]
   required_labels: [agentic]
-  excluded_labels: [blocked]
+  excluded_labels: [blocked, draft]
   writes:
     enabled: false
 
@@ -19,6 +19,7 @@ workspace:
 agent:
   kind: claude-cli
   max_concurrent_agents: 1
+  max_attempts: 3
 
 claude-cli:
   model: claude-sonnet-4-6
