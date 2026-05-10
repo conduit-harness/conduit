@@ -24,7 +24,7 @@ tracker:
   project_id: 12345
   active_states: [opened]
   required_labels: [agentic]
-  excluded_labels: [blocked]
+  excluded_labels: [blocked, draft, wontfix]
   writes:
     enabled: false
 ```

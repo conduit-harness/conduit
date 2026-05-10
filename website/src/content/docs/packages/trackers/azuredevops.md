@@ -37,7 +37,7 @@ tracker:
   active_states: [Active, New]
   terminal_states: [Closed, Resolved, Removed]
   required_labels: [agentic]
-  excluded_labels: [blocked]
+  excluded_labels: [blocked, draft, wontfix]
   writes:
     enabled: false
 ```
