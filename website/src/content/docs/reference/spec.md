@@ -408,6 +408,10 @@ Fields:
 - `max_concurrent_agents` (integer or string integer)
   - Default: `10`
   - Changes should be re-applied at runtime and affect subsequent dispatch decisions.
+- `max_attempts` (integer or string integer)
+  - Default: `3`
+  - Maximum number of dispatch attempts per issue. `0` means unlimited (not recommended; can cause runaway dispatch loops if combined with writes-disabled tracker config).
+  - Changes should be re-applied at runtime and affect subsequent dispatch decisions.
 - `max_retry_backoff_ms` (integer or string integer)
   - Default: `300000` (5 minutes)
   - Changes should be re-applied at runtime and affect future retry scheduling.
@@ -572,6 +576,7 @@ This section is intentionally redundant so a coding agent can implement the conf
 - `hooks.before_remove`: shell script or null
 - `hooks.timeout_ms`: integer, default `60000`
 - `agent.max_concurrent_agents`: integer, default `10`
+- `agent.max_attempts`: integer, default `3`; `0` = unlimited (not recommended)
 - `agent.max_turns`: integer, default `20`
 - `agent.max_retry_backoff_ms`: integer, default `300000` (5m)
 - `agent.max_concurrent_agents_by_state`: map of positive integers, default `{}`

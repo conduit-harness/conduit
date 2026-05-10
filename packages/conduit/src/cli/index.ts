@@ -230,7 +230,7 @@ async function main() {
   const logger = sink ? new Logger(level, sink) : new Logger(level);
 
   if (args.command === "validate") {
-    validateForDispatch(config);
+    validateForDispatch(config, (msg) => logger.warn(msg));
     if (args.flags.preflight) {
       const tracker: IssueTracker = config.tracker.kind === "fake" ? new FakeTracker(config) : await loadPlugin<IssueTracker>("tracker", config.tracker.kind, config);
       const agent: AgentRunner = config.agent.kind === "fake" ? new FakeAgentRunner() : await loadPlugin<AgentRunner>("runner", config.agent.kind, config);
@@ -242,7 +242,7 @@ async function main() {
   }
 
   if (args.command !== "once" && args.command !== "start") return usage(1);
-  if (!args.flags["dry-run"]) validateForDispatch(config);
+  if (!args.flags["dry-run"]) validateForDispatch(config, (msg) => logger.warn(msg));
   const tracker: IssueTracker = config.tracker.kind === "fake" ? new FakeTracker(config) : await loadPlugin<IssueTracker>("tracker", config.tracker.kind, config);
   const agent: AgentRunner = config.agent.kind === "fake" ? new FakeAgentRunner() : await loadPlugin<AgentRunner>("runner", config.agent.kind, config);
   const orch = new Orchestrator(config, workflow, tracker, agent, logger);

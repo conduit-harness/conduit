@@ -80,7 +80,7 @@ export function buildConfig(workflow: WorkflowDefinition, repoPath: string, over
     agent: {
       kind: agentKind,
       maxConcurrentAgents: Math.max(1, intValue(agent.max_concurrent_agents, 10)),
-      maxAttempts: Math.max(0, intValue(agent.max_attempts, 0)),
+      maxAttempts: Math.max(0, intValue(agent.max_attempts, 3)),
       maxRetryBackoffMs: intValue(agent.max_retry_backoff_ms, 300000),
       maxConcurrentAgentsByState: maxByState,
       raw: resolveRawEnvRefs(agentSectionRaw),
@@ -88,7 +88,8 @@ export function buildConfig(workflow: WorkflowDefinition, repoPath: string, over
   };
 }
 
-export function validateForDispatch(config: ServiceConfig) {
+export function validateForDispatch(config: ServiceConfig, warn?: (msg: string) => void) {
   if (!config.tracker.kind) throw new Error("missing_tracker_kind: set tracker.kind in workflow");
   if (!config.agent.kind) throw new Error("missing_agent_kind: set agent.kind in workflow");
+  if (config.agent.maxAttempts === 0) warn?.("max_attempts is 0 (unlimited). Consider setting a cap to prevent runaway dispatch loops.");
 }
