@@ -63,7 +63,9 @@ Description:
 Please make the smallest safe change, run relevant tests, and summarize the result.
 ```
 
-**`excluded_labels`** — Conduit skips any issue that carries one of these labels. The defaults (`blocked`, `draft`, `wontfix`) cover the most common "not ready for an agent" patterns. Add labels like `needs-design` or `on-hold` for your own conventions; remove any you don't use.
+### excluded_labels
+
+`excluded_labels` skips any issue that carries one of the listed labels. The defaults (`blocked`, `draft`, `wontfix`) prevent the agent from picking up issues that are on hold, not ready for implementation, or explicitly won't be resolved. Extend the list with labels like `question` or `help-wanted` if you want to exclude informational issues from dispatch.
 
 ## Environment
 

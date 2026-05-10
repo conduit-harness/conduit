@@ -26,7 +26,7 @@ tracker:
   project_key: PROJ
   active_states: [To Do, In Progress]
   required_labels: [agentic]
-  excluded_labels: [blocked]
+  excluded_labels: [blocked, draft, wontfix]
   writes:
     enabled: false
 ```
