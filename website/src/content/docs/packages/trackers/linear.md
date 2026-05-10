@@ -24,7 +24,7 @@ tracker:
   team_key: YOUR_TEAM_KEY
   active_states: [Todo, Ready]
   required_labels: [agentic]
-  excluded_labels: [blocked]
+  excluded_labels: [blocked, draft, wontfix]
   writes:
     enabled: false
 ```
