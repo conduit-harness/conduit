@@ -106,6 +106,25 @@ conduit once     --workflow .conduit/workflow.md
 conduit start    --workflow .conduit/workflow.md
 ```
 
+Or inline the credential without a `.env` file:
+
+**macOS / Linux (bash / zsh)**
+```bash
+LINEAR_API_KEY=<your-key> conduit start --workflow .conduit/workflow.md
+```
+
+**Windows (PowerShell)**
+```powershell
+$env:LINEAR_API_KEY = "<your-key>"; conduit start --workflow .conduit/workflow.md
+```
+
+**Windows (cmd)**
+```cmd
+set LINEAR_API_KEY=<your-key> && conduit start --workflow .conduit/workflow.md
+```
+
+See the [Quickstart](https://conduit.tomhofman.dev/guides/quickstart/) for platform-specific one-liners that pull the token from a credential helper (e.g. `gh auth token` for GitHub).
+
 ## CLI
 
 ```
