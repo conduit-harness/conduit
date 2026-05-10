@@ -1,6 +1,6 @@
 {
   "name": "@conduit-harness/conduit-runner-aider",
-  "version": "0.1.0",
+  "version": "0.1.1-preview.1",
   "description": "Conduit agent runner plugin for Aider (open-source agentic CLI, works with Ollama)",
   "license": "MIT",
   "type": "module",

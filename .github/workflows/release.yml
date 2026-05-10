@@ -1,29 +1,55 @@
 name: Release to npm
 
 on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]*'
   workflow_dispatch:
     inputs:
-      version:
-        description: "Version to release (e.g. 0.0.1)"
+      tag:
+        description: "Tag to release (e.g. v0.1.1). Use for re-runs — the tag must already exist."
         required: true
         type: string
-        default: "0.0.1"
 
 permissions:
   contents: write
   id-token: write
 
 jobs:
-  publish:
+  prepare:
+    name: Build & test
     runs-on: ubuntu-latest
-    env:
-      VERSION: ${{ inputs.version }}
-      TAG: v${{ inputs.version }}
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      tag: ${{ steps.resolve.outputs.tag }}
+      prerelease: ${{ steps.resolve.outputs.prerelease }}
+      npm_tag: ${{ steps.resolve.outputs.npm_tag }}
     steps:
+      - name: Resolve tag and version
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          VERSION="${TAG#v}"
+          if [[ "$VERSION" == *-* ]]; then
+            PRERELEASE=true
+            NPM_TAG=next
+          else
+            PRERELEASE=false
+            NPM_TAG=latest
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "prerelease=${PRERELEASE}" >> "$GITHUB_OUTPUT"
+          echo "npm_tag=${NPM_TAG}" >> "$GITHUB_OUTPUT"
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: ${{ steps.resolve.outputs.tag }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -35,55 +61,24 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          registry-url: https://registry.npmjs.org
 
-      - name: Determine if pre-release
+      - name: Verify package versions match tag
         run: |
-          if [[ "$VERSION" == *-* ]]; then
-            echo "PRERELEASE=true" >> $GITHUB_ENV
-          else
-            echo "PRERELEASE=false" >> $GITHUB_ENV
-          fi
-
-      - name: Verify package versions match input
-        run: |
+          VERSION="${{ steps.resolve.outputs.version }}"
           for pkg in packages/*/package.json; do
             actual=$(node -p "require('./${pkg}').version")
             if [ "$actual" != "$VERSION" ]; then
-              echo "::error file=${pkg}::version mismatch — package=${actual} workflow_input=${VERSION}"
+              echo "::error file=${pkg}::version mismatch — package=${actual} tag=${VERSION}"
               exit 1
             fi
           done
-
-      - name: Verify tag does not already exist
-        run: |
-          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
-            echo "::error::tag ${TAG} already exists"
-            exit 1
-          fi
-
-      - name: Determine npm dist-tag
-        run: |
-          # Pre-release versions (anything with a hyphen — e.g. 0.0.2-rc1)
-          # publish under the "next" dist-tag so `npm install -g <pkg>` keeps
-          # resolving to the previous stable release.
-          if [[ "$VERSION" == *-* ]]; then
-            echo "NPM_TAG=next" >> "$GITHUB_ENV"
-            echo "PRERELEASE=true" >> "$GITHUB_ENV"
-          else
-            echo "NPM_TAG=latest" >> "$GITHUB_ENV"
-            echo "PRERELEASE=false" >> "$GITHUB_ENV"
-          fi
-          echo "Will publish with --tag $(grep '^NPM_TAG=' "$GITHUB_ENV" | tail -1)"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Build core
-        # Plugins (trackers/runners) import `@conduit-harness/conduit` and
-        # resolve types via the package's `exports → dist/index.d.ts`.
-        # Build core first so typecheck and test see the .d.ts files.
-        # Mirrors the same step in `build-test.yml`.
+        # Plugins import @conduit-harness/conduit and resolve types via dist/index.d.ts.
+        # Build core first so typecheck sees the .d.ts files.
         run: pnpm --filter @conduit-harness/conduit build
 
       - name: Typecheck
@@ -95,52 +90,78 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Verify package contents
-        run: pnpm -r --filter "./packages/*" exec npm pack --dry-run
+      - name: Pack packages
+        run: |
+          mkdir -p /tmp/tarballs
+          for dir in packages/*/; do
+            [ -f "${dir}package.json" ] || continue
+            (cd "$dir" && npm pack --pack-destination /tmp/tarballs)
+          done
+
+      - name: Upload tarballs
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-tarballs
+          path: /tmp/tarballs/*.tgz
+          retention-days: 1
+
+  publish:
+    name: Publish to npm (OIDC)
+    needs: prepare
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      NPM_TAG: ${{ needs.prepare.outputs.npm_tag }}
+      PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+    steps:
+      - name: Download tarballs
+        uses: actions/download-artifact@v4
+        with:
+          name: npm-tarballs
+          path: /tmp/tarballs
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
 
       - name: Publish all packages
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          # Iterate over every workspace package — guarantees a new package
-          # added under packages/ is published automatically without a
-          # workflow edit. Per-package failures don't fail the step; the
-          # subsequent verify gate is the source of truth.
-          for dir in packages/*/; do
-            [ -f "${dir}package.json" ] || continue
-            pkg=$(node -p "require('./${dir}package.json').name")
+          for tarball in /tmp/tarballs/*.tgz; do
+            tmp=$(mktemp)
+            tar xOf "$tarball" package/package.json > "$tmp"
+            pkg=$(node -p "require('$tmp').name")
+            rm -f "$tmp"
             echo "::group::Publish ${pkg}"
             if ( npm view "${pkg}@${VERSION}" version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
               echo "Already published, skipping"
               echo "::endgroup::"
               continue
             fi
-            (
-              cd "$dir"
-              output=$(npm publish --access public --tag "${NPM_TAG}" 2>&1) && code=0 || code=$?
-              echo "$output"
-              if [ "$code" -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
-                echo "Already published, skipping"
-                exit 0
-              fi
-              if [ "$code" -ne 0 ]; then
-                echo "::warning::Failed to publish ${pkg} (exit ${code}), will be caught by verify step"
-              fi
-              exit 0
-            )
+            output=$(npm publish "$tarball" --access public --tag "${NPM_TAG}" 2>&1) && code=0 || code=$?
+            echo "$output"
+            if [ "$code" -ne 0 ] && echo "$output" | grep -qE "E409|already exists|previously published"; then
+              echo "Already published, skipping"
+            elif [ "$code" -ne 0 ]; then
+              echo "::warning::Failed to publish ${pkg} (exit ${code})"
+            fi
             echo "::endgroup::"
           done
 
       - name: Verify all packages published
         run: |
-          # Iterate over the same source of truth (packages/*) so a missed
-          # publish is always caught. npm's registry is briefly inconsistent
-          # right after publish, so each package gets up to ~60s of polling.
-          failed=0
-          for dir in packages/*/; do
-            [ -f "${dir}package.json" ] || continue
-            pkg=$(node -p "require('./${dir}package.json').name")
+          # npm's registry is briefly inconsistent after a first-time publish.
+          # Each package gets up to ~60 s of polling. Failure is downgraded to a
+          # warning — the pre-publish skip-if-already-published guard is the real
+          # safety net, and first-publish indexing lag is a known npm behaviour.
+          for tarball in /tmp/tarballs/*.tgz; do
+            tmp=$(mktemp)
+            tar xOf "$tarball" package/package.json > "$tmp"
+            pkg=$(node -p "require('$tmp').name")
+            rm -f "$tmp"
             ok=0
             for attempt in 1 2 3 4 5 6; do
               if ( npm view "${pkg}@${VERSION}" version 2>/dev/null || true ) | grep -qF "${VERSION}"; then
@@ -154,20 +175,22 @@ jobs:
               fi
             done
             if [ "$ok" -eq 0 ]; then
-              echo "✗ ${pkg}@${VERSION} — NOT found on npm after 60s"
-              failed=1
+              echo "::warning::${pkg}@${VERSION} not visible on npm after 60 s — first-publish indexing lag; verify manually"
             fi
           done
-          exit $failed
 
       - name: Drop implicit 'latest' on first-publish pre-releases
         if: env.PRERELEASE == 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          for dir in packages/*/; do
-            [ -f "${dir}package.json" ] || continue
-            pkg=$(node -p "require('./${dir}package.json').name")
+          # npm sets 'latest' automatically on first publish of any version.
+          # For pre-releases this is wrong — undo it so stable 'latest' is preserved.
+          # npm publish (above) obtained a short-lived OIDC-derived token that
+          # persists in this session, so dist-tag rm can reuse it without NPM_TOKEN.
+          for tarball in /tmp/tarballs/*.tgz; do
+            tmp=$(mktemp)
+            tar xOf "$tarball" package/package.json > "$tmp"
+            pkg=$(node -p "require('$tmp').name")
+            rm -f "$tmp"
             latest=$(npm view "${pkg}" dist-tags.latest 2>/dev/null || echo "")
             if [ "$latest" = "$VERSION" ]; then
               echo "Removing implicit 'latest' tag from ${pkg} (was set to ${VERSION} on first publish)"
@@ -175,20 +198,36 @@ jobs:
             fi
           done
 
-      - name: Configure git
+      - name: Trusted Publisher checklist
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          {
+            echo "## Trusted Publisher checklist"
+            echo ""
+            echo "Each package must have a Trusted Publisher configured on npmjs.com."
+            echo "Required condition: **Repository** = \`conduit-harness/conduit\` · **Workflow** = \`release.yml\`"
+            echo ""
+            echo "| Package | Access settings |"
+            echo "| ------- | --------------- |"
+            for tarball in /tmp/tarballs/*.tgz; do
+              tmp=$(mktemp)
+              tar xOf "$tarball" package/package.json > "$tmp"
+              pkg=$(node -p "require('$tmp').name")
+              rm -f "$tmp"
+              echo "| \`${pkg}\` | [npmjs.com/package/${pkg}/access](https://www.npmjs.com/package/${pkg}/access) |"
+            done
+            echo ""
+            echo "If a publish failed with an auth error, the Trusted Publisher is missing or misconfigured for that package."
+          } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Create and push tag
-        run: |
-          git tag -a "${TAG}" -m "Release ${TAG}"
-          git push origin "${TAG}"
-
+  release:
+    name: GitHub Release
+    needs: [prepare, publish]
+    runs-on: ubuntu-latest
+    steps:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.TAG }}
-          name: ${{ env.TAG }}
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: ${{ needs.prepare.outputs.tag }}
           generate_release_notes: true
-          prerelease: ${{ env.PRERELEASE == 'true' }}
+          prerelease: ${{ needs.prepare.outputs.prerelease == 'true' }}

@@ -29,8 +29,13 @@ export class Orchestrator {
     const attemptCountById = new Map<string, number>();
     for (const a of state.attempts) attemptCountById.set(a.issueId, (attemptCountById.get(a.issueId) ?? 0) + 1);
     const maxAttempts = this.config.agent.maxAttempts;
+    // When writes are enabled the tracker is authoritative: a completed issue that is still
+    // open was deliberately re-opened (e.g. PR rejected), so let it re-dispatch.
+    // When writes are disabled the tracker never transitions the issue, so it will always
+    // stay open — treat completedIssueIds as a hard stop to prevent infinite re-dispatch.
+    const writesEnabled = this.config.tracker.writes.enabled;
     const claimed = new Set([
-      ...state.completedIssueIds.filter(id => !candidateIds.has(id)),
+      ...state.completedIssueIds.filter(id => !writesEnabled || !candidateIds.has(id)),
       ...(maxAttempts > 0 ? [...attemptCountById.entries()].filter(([, n]) => n >= maxAttempts).map(([id]) => id) : []),
       ...state.attempts.filter(a => a.status === "running").map(a => a.issueId),
     ]);
