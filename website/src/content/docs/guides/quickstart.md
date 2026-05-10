@@ -89,6 +89,41 @@ conduit start    --workflow .conduit/workflow.md
 
 Add `--dry-run` to either command to select issues without dispatching agents.
 
+### Start with inline token
+
+Instead of a `.env` file you can inline the credential directly in the start command — useful for one-off runs or CI. The syntax differs by shell.
+
+#### macOS / Linux (bash / zsh)
+
+```bash
+GITHUB_TOKEN=$(gh auth token) conduit start --workflow .conduit/workflow.md
+```
+
+#### Windows (PowerShell)
+
+```powershell
+$env:GITHUB_TOKEN = (gh auth token); conduit start --workflow .conduit/workflow.md
+```
+
+#### Windows (cmd)
+
+```cmd
+for /f %i in ('gh auth token') do set GITHUB_TOKEN=%i && conduit start --workflow .conduit/workflow.md
+```
+
+The same pattern works for any tracker that reads a token from an environment variable — replace `GITHUB_TOKEN=$(gh auth token)` with the appropriate variable and credential helper for your tracker:
+
+| Tracker | Variable | Credential helper |
+|---------|----------|-------------------|
+| GitHub | `GITHUB_TOKEN` | `gh auth token` |
+| Linear | `LINEAR_API_KEY` | *(copy from Linear settings)* |
+| GitLab | `GITLAB_TOKEN` | `glab auth token` |
+| Jira | `JIRA_API_TOKEN` | *(copy from Atlassian account)* |
+| Azure DevOps | `AZURE_DEVOPS_TOKEN` | `az account get-access-token --query accessToken -o tsv` |
+| Forgejo | `FORGEJO_TOKEN` | *(copy from Forgejo user settings)* |
+
+> **Tested on:** macOS (zsh), Windows 11 (PowerShell 7). The `cmd` variant follows the standard `for /f` pattern — verify in your environment before scripting.
+
 ## Next steps
 
 - [Configuration](/guides/configuration/) — workspace and state paths, secrets, plugins.
