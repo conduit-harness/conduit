@@ -35,7 +35,7 @@ tracker:
   repo: your-repo
   active_states: [open]
   required_labels: [agentic]
-  excluded_labels: [blocked]
+  excluded_labels: [blocked, draft, wontfix]
   writes:
     enabled: false
 workspace:
@@ -62,6 +62,8 @@ Description:
 
 Please make the smallest safe change, run relevant tests, and summarize the result.
 ```
+
+**`excluded_labels`** — Conduit skips any issue that carries one of these labels. The defaults (`blocked`, `draft`, `wontfix`) cover the most common "not ready for an agent" patterns. Add labels like `needs-design` or `on-hold` for your own conventions; remove any you don't use.
 
 ## Environment
 

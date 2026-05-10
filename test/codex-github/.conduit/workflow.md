@@ -7,7 +7,7 @@ tracker:
   active_states: [open]
   terminal_states: [closed]
   required_labels: [agentic]
-  excluded_labels: [blocked]
+  excluded_labels: [blocked, draft, wontfix]
   writes:
     enabled: true
     on_start:

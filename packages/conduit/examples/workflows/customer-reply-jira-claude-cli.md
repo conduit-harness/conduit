@@ -12,7 +12,7 @@ tracker:
   active_states: [To Do, In Progress]
   terminal_states: [Done, Closed, "Won't Do"]
   required_labels: [needs-reply]
-  excluded_labels: [blocked]
+  excluded_labels: [blocked, draft, wontfix]
   page_size: 50
   writes:
     enabled: true
