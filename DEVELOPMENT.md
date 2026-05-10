@@ -14,9 +14,14 @@ When a `0.x.0` release is approaching ready (the targeted feature set is largely
 
 1. **Cut a release branch** from `main`: `release/0.x.0`.
 2. **Bump every `packages/*/package.json` `version`** (and matching `peerDependencies`) to `0.x.0-preview.1`.
-3. **Trigger the release workflow** with `0.x.0-preview.1` as input. The hyphen-detection logic in `release.yml` routes the publish to the npm `next` dist-tag — so `npm install -g <pkg>` still resolves to the previous stable, and `npm install -g <pkg>@next` opts into the preview.
-4. **Iterate**. Bug reports and fixes against `0.x.0-preview.1` land on the `release/0.x.0` branch (or merge-forward from `main` if the fix is generally applicable). Each iteration bumps to `0.x.0-preview.N` and re-runs the release workflow.
-5. **Cut the stable release.** When the preview has been validated, bump to `0.x.0` (no hyphen). The workflow publishes under `latest`. The GitHub release is no longer marked pre-release.
+3. **Push the version tag** from the bump commit to trigger the release workflow:
+   ```bash
+   git tag v0.x.0-preview.1
+   git push origin v0.x.0-preview.1
+   ```
+   The hyphen-detection logic in `release.yml` routes the publish to the npm `next` dist-tag — so `npm install -g <pkg>` still resolves to the previous stable, and `npm install -g <pkg>@next` opts into the preview.
+4. **Iterate**. Bug reports and fixes against `0.x.0-preview.1` land on the `release/0.x.0` branch (or merge-forward from `main` if the fix is generally applicable). Each iteration bumps to `0.x.0-preview.N` and pushes a new tag to trigger the workflow.
+5. **Cut the stable release.** When the preview has been validated, bump to `0.x.0` (no hyphen) and push the `v0.x.0` tag. The workflow publishes under `latest`. The GitHub release is no longer marked pre-release.
 6. **Merge `release/0.x.0` back to `main`** so the version bump and any release-only fixes land on the trunk.
 
 ## Patch releases (`0.x.y` for `y > 0`)
@@ -26,7 +31,8 @@ Patches branch from the `v0.x.0` tag, not from `main`. This isolates patches fro
 ```
 git checkout -b release/0.x.y v0.x.0
 # bump packages/*/package.json to 0.x.y, cherry-pick or commit fixes
-# trigger release workflow with 0.x.y
+git tag v0.x.y
+git push origin v0.x.y   # triggers the release workflow
 # merge release/0.x.y back into main
 ```
 

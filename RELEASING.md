@@ -1,10 +1,12 @@
 # Releasing
 
-Conduit ships as 8 separate npm packages (1 core + 4 trackers + 3 runners), all versioned in lockstep. A release publishes every package, creates a `v<version>` git tag, and a corresponding GitHub release with auto-generated notes.
+Conduit ships as 10 separate npm packages (1 core + 5 trackers + 4 runners), all versioned in lockstep. A release publishes every package, and creates a corresponding GitHub release with auto-generated notes.
+
+The release workflow authenticates to npm via **OIDC (Trusted Publishing)** — no long-lived `NPM_TOKEN` is used or required.
 
 ## Stable vs pre-release
 
-Versions containing a hyphen (e.g. `0.0.2-rc1`, `1.0.0-beta.3`) are treated as pre-releases by the workflow:
+Versions containing a hyphen (e.g. `0.1.0-preview.1`, `1.0.0-beta.3`) are treated as pre-releases by the workflow:
 
 - Each package is published under the npm `next` dist-tag instead of `latest`, so `npm install -g <pkg>` still resolves to the previous stable release. Opt in with `npm install -g <pkg>@next`.
 - The GitHub release is marked as a pre-release.
@@ -13,47 +15,64 @@ Stable versions (no hyphen) publish under `latest` and create a non-pre-release 
 
 ## Steps
 
-1. **Bump versions.** On a PR (or a long-lived release branch), update `version` in every `packages/*/package.json` to the new version (e.g. `0.0.1` → `0.0.2-rc1`). Match exactly — the workflow refuses to release if any package disagrees.
+1. **Bump versions.** On a PR (or a long-lived release branch), update `version` in every `packages/*/package.json` to the new version (e.g. `0.1.0` → `0.1.1`). Match exactly — the workflow refuses to release if any package disagrees.
 
 2. **Merge the bump PR to `main`** (or push the release branch).
 
-3. **Trigger the release.** From the GitHub Actions tab, run the **Release to npm** workflow with the new version as input (e.g. `0.0.2-rc1`). For releases off a non-main branch, pick that branch in the "Use workflow from" dropdown.
+3. **Push the version tag.** From the commit that carries the bumped versions:
 
-   The workflow will, in order:
+   ```bash
+   git tag v<version>          # e.g. git tag v0.1.1
+   git push origin v<version>
+   ```
 
-   - Verify every `packages/*/package.json` matches the input version.
-   - Verify the `v<version>` tag does not already exist.
+   Pushing the tag triggers the **Release to npm** workflow automatically. The workflow will, in order:
+
+   - Verify every `packages/*/package.json` matches the tag version.
    - Install, typecheck, test, build.
-   - `npm publish` every workspace package (auto-discovered from `packages/*/package.json` — no per-package step to maintain). Each publish skips cleanly if the version is already on npm, so the workflow is idempotent and can be re-run if it fails partway.
-   - Poll npm with retries (up to 60s per package, also iterating over `packages/*`) to confirm every package is visible at the new version. A package added under `packages/` but somehow not published gets caught here.
-   - Create and push the `v<version>` tag.
+   - Pack each package into a tarball (built once, reused for publish).
+   - `npm publish` every package via OIDC (auto-discovered from `packages/*/package.json` — no per-package step to maintain). Each publish skips cleanly if the version is already on npm, so the workflow is idempotent and safe to re-run.
+   - Poll npm with retries (up to 60 s per package) to confirm visibility. A missed publish surfaces as a warning rather than a failure — the pre-publish skip-if-already-published guard is the real safety net.
    - Create the GitHub release with auto-generated notes (PRs since the previous tag).
 
 4. **Verify the release page.** <https://github.com/conduit-harness/conduit/releases> should list the new release with notes.
 
 ## What if it fails partway?
 
-The publish steps are independent and idempotent. If the workflow fails (e.g. one package's publish errored out, or the verify gate timed out for transient npm reasons), fix the underlying cause and re-run the same workflow with the same version input.
+The publish steps are independent and idempotent. If the workflow fails (e.g. one package's publish errored out, or the verify step timed out for transient npm reasons), fix the underlying cause and re-run via **workflow_dispatch**:
 
-- Already-published packages are detected and skipped.
-- The "tag does not already exist" check at the start protects against accidental re-tags only — if the tag step itself ran and succeeded, a re-run will fail on this check; in that case the release is effectively done and only the missing post-tag steps need a manual touch-up.
+1. Go to **Actions → Release to npm → Run workflow**.
+2. Enter the existing tag (e.g. `v0.1.1`) as the input. The tag must already exist.
+3. Already-published packages are detected and skipped automatically.
+
+## Trusted Publisher configuration (one-time per package)
+
+Because the workflow uses OIDC instead of a static token, each npm package must have a Trusted Publisher configured. This is a one-time setup per package:
+
+1. Open **npmjs.com → package → Settings → Publishing access**.
+2. Under **Trusted Publishers**, add a GitHub Actions publisher with:
+   - **Repository owner:** `conduit-harness`
+   - **Repository name:** `conduit`
+   - **Workflow filename:** `release.yml`
+3. Leave **Environment** blank (no GitHub Actions environment is used).
+
+The workflow's summary step prints a direct link to each package's access page after every run.
 
 ## Manual fallback (rare)
 
-If the automated workflow can't run, you can publish manually with an npm token, then create the tag and GitHub release directly:
+If the automated workflow can't run, you can publish manually. Obtain a short-lived npm token (or use a Granular Access Token scoped to the relevant packages), then:
 
 ```bash
-# After publishing all 8 packages with `npm publish` from each packages/* dir:
-git tag -a v<version> -m "Release v<version>" <commit-sha>
-git push origin v<version>
-gh release create v<version> --target <commit-sha> --generate-notes
-```
+# From each packages/* directory:
+npm publish --access public --tag next   # or --tag latest for stable
 
-`<commit-sha>` should be the commit on `main` whose `package.json` versions match the released artifacts.
+# After all packages are published:
+gh release create v<version> --generate-notes
+```
 
 ## Pre-release checklist
 
 - [ ] All packages in `packages/*/package.json` agree on the new version.
 - [ ] `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build` succeed locally.
-- [ ] `CHANGELOG.md` (if added in future) reflects the new version.
-- [ ] The bump PR is reviewed and merged.
+- [ ] Every package on npmjs.com has a Trusted Publisher configured for `conduit-harness/conduit` + `release.yml`.
+- [ ] The bump PR is reviewed and merged before pushing the tag.
