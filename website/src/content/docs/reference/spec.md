@@ -405,6 +405,16 @@ Fields:
 
 Fields:
 
+- `max_attempts` (integer or string integer)
+  - Default: `3`
+  - Maximum number of dispatch attempts per issue. Once an issue has been attempted this many times
+    without succeeding, it is excluded from further dispatch.
+  - `0` is a sentinel meaning **unlimited** — the issue can be re-dispatched indefinitely. Setting
+    this intentionally requires understanding the risk of runaway loops (e.g. when `writes.enabled`
+    is `false` and no excluded label is applied on failure). **Not recommended** unless you have
+    another stop mechanism in place.
+  - Recommended range: `1`–`5`.
+  - Changes should be re-applied at runtime and affect subsequent dispatch decisions.
 - `max_concurrent_agents` (integer or string integer)
   - Default: `10`
   - Changes should be re-applied at runtime and affect subsequent dispatch decisions.

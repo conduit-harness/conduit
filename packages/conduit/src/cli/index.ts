@@ -6,7 +6,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import readline from "node:readline";
 import { fileURLToPath } from "node:url";
-import { loadDotEnv, discoverWorkflow, loadWorkflow, buildConfig, validateForDispatch } from "../config/workflow.js";
+import { loadDotEnv, discoverWorkflow, loadWorkflow, buildConfig, validateForDispatch, configWarnings } from "../config/workflow.js";
 import { Logger, type LogLevel } from "../logging/logger.js";
 import { FileLogSink } from "../logging/file-sink.js";
 import { FakeTracker } from "../tracker/fake.js";
@@ -231,6 +231,7 @@ async function main() {
 
   if (args.command === "validate") {
     validateForDispatch(config);
+    for (const w of configWarnings(config)) logger.warn(w);
     if (args.flags.preflight) {
       const tracker: IssueTracker = config.tracker.kind === "fake" ? new FakeTracker(config) : await loadPlugin<IssueTracker>("tracker", config.tracker.kind, config);
       const agent: AgentRunner = config.agent.kind === "fake" ? new FakeAgentRunner() : await loadPlugin<AgentRunner>("runner", config.agent.kind, config);
