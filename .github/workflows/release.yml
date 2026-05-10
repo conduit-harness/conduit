@@ -131,7 +131,7 @@ jobs:
           NPM_CONFIG_PROVENANCE: "true"
         run: |
           for tarball in /tmp/tarballs/*.tgz; do
-            tmp=$(mktemp)
+            tmp=$(mktemp --suffix=.json)
             tar xOf "$tarball" package/package.json > "$tmp"
             pkg=$(node -p "require('$tmp').name")
             rm -f "$tmp"
@@ -158,7 +158,7 @@ jobs:
           # warning — the pre-publish skip-if-already-published guard is the real
           # safety net, and first-publish indexing lag is a known npm behaviour.
           for tarball in /tmp/tarballs/*.tgz; do
-            tmp=$(mktemp)
+            tmp=$(mktemp --suffix=.json)
             tar xOf "$tarball" package/package.json > "$tmp"
             pkg=$(node -p "require('$tmp').name")
             rm -f "$tmp"
@@ -187,7 +187,7 @@ jobs:
           # npm publish (above) obtained a short-lived OIDC-derived token that
           # persists in this session, so dist-tag rm can reuse it without NPM_TOKEN.
           for tarball in /tmp/tarballs/*.tgz; do
-            tmp=$(mktemp)
+            tmp=$(mktemp --suffix=.json)
             tar xOf "$tarball" package/package.json > "$tmp"
             pkg=$(node -p "require('$tmp').name")
             rm -f "$tmp"
@@ -209,7 +209,7 @@ jobs:
             echo "| Package | Access settings |"
             echo "| ------- | --------------- |"
             for tarball in /tmp/tarballs/*.tgz; do
-              tmp=$(mktemp)
+              tmp=$(mktemp --suffix=.json)
               tar xOf "$tarball" package/package.json > "$tmp"
               pkg=$(node -p "require('$tmp').name")
               rm -f "$tmp"
