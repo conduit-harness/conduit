@@ -8,5 +8,16 @@
     "test:trackers": "pnpm --filter './packages/conduit-tracker-*' test",
     "test:runners": "pnpm --filter './packages/conduit-runner-*' test",
     "typecheck": "pnpm --filter @conduit-harness/conduit typecheck && pnpm --filter @conduit-harness/conduit-runner-claude-cli typecheck"
+  },
+  "pnpm": {
+    "overrides": {
+      "fast-uri": ">=3.1.2",
+      "yaml": ">=2.8.3"
+    }
+  },
+  "dependencies": {
+    "@conduit-harness/conduit": "next",
+    "@conduit-harness/conduit-runner-claude-cli": "next",
+    "@conduit-harness/conduit-tracker-github": "next"
   }
 }
