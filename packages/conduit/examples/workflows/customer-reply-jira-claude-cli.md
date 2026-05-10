@@ -31,6 +31,7 @@ hooks:
 agent:
   kind: claude-cli
   max_concurrent_agents: 2
+  max_attempts: 3   # max dispatch attempts per issue; 0 = unlimited (not recommended)
   max_retry_backoff_ms: 300000
 claude-cli:
   command: claude --dangerously-skip-permissions -p -

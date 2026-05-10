@@ -38,6 +38,7 @@ hooks:
 agent:
   kind: fake # change to codex-cli for real Codex child process
   max_concurrent_agents: 1
+  max_attempts: 3   # max dispatch attempts per issue; 0 = unlimited (not recommended)
   max_retry_backoff_ms: 300000
 codex-cli:
   mode: cli
