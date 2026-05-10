@@ -408,7 +408,7 @@
           `  repo: ${state.inputs["github.repo"] || "owner/name"}`,
           "  active_states: [open]",
           `  required_labels: [${label}]`,
-          "  excluded_labels: [blocked]",
+          "  excluded_labels: [blocked, draft, wontfix]",
           ...writesYaml(),
         ].join("\n");
       }
@@ -420,7 +420,7 @@
           `  team_key: ${state.inputs["linear.team_key"] || "ENG"}`,
           "  active_states: [Todo, Ready]",
           `  required_labels: [${label}]`,
-          "  excluded_labels: [blocked]",
+          "  excluded_labels: [blocked, draft, wontfix]",
           ...writesYaml(),
         ].join("\n");
       }
@@ -434,7 +434,7 @@
           `  project_key: ${state.inputs["jira.project_key"] || "PROJ"}`,
           "  active_states: [To Do, In Progress]",
           `  required_labels: [${label}]`,
-          "  excluded_labels: [blocked]",
+          "  excluded_labels: [blocked, draft, wontfix]",
           ...writesYaml(),
         ].join("\n");
       }
@@ -446,7 +446,7 @@
         `  project_id: ${state.inputs["gitlab.project_id"] || "12345"}`,
         "  active_states: [opened]",
         `  required_labels: [${label}]`,
-        "  excluded_labels: [blocked]",
+        "  excluded_labels: [blocked, draft, wontfix]",
         ...writesYaml(),
       ].join("\n");
     }

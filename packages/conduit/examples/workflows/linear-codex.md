@@ -9,7 +9,7 @@ tracker:
   active_states: [Todo, Ready]
   terminal_states: [Done, Canceled, Cancelled, Closed, Duplicate]
   required_labels: [agentic]
-  excluded_labels: [blocked]
+  excluded_labels: [blocked, draft, wontfix]
   page_size: 50
   writes:
     enabled: false

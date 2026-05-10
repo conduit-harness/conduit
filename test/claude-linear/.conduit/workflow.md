@@ -6,7 +6,7 @@ tracker:
   active_states: [Todo, In Progress]
   terminal_states: [Done, Canceled, Cancelled, Duplicate]
   required_labels: [agentic]
-  excluded_labels: [blocked]
+  excluded_labels: [blocked, draft, wontfix]
   writes:
     enabled: true
     on_start:

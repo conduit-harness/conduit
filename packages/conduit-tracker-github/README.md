@@ -29,7 +29,7 @@ tracker:
   repo: owner/name
   active_states: [open]
   required_labels: [agentic]
-  excluded_labels: [blocked]
+  excluded_labels: [blocked, draft, wontfix]
   writes:
     enabled: false
 ```

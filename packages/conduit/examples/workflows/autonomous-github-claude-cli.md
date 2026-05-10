@@ -7,7 +7,7 @@ tracker:
   active_states: [open]
   terminal_states: [closed]
   required_labels: [agentic]
-  excluded_labels: [blocked]
+  excluded_labels: [blocked, draft, wontfix]
   page_size: 50
   writes:
     enabled: true
